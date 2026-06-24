@@ -1,0 +1,150 @@
+@import "tailwindcss";
+@source "../../**/*.{ts,tsx}";
+
+:root {
+  --background: #07070f;
+  --foreground: #f4f4f5;
+  --neon-cyan: #00f5ff;
+  --neon-magenta: #ff0080;
+  --neon-violet: #8b5cf6;
+  --surface: #0d0d18;
+  --surface-elevated: #12121f;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-neon-cyan: var(--neon-cyan);
+  --color-neon-magenta: var(--neon-magenta);
+  --color-neon-violet: var(--neon-violet);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --font-sans: var(--font-outfit);
+  --font-brand: var(--font-bebas);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 245, 255, 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(255, 0, 128, 0.06), transparent),
+    radial-gradient(ellipse 50% 30% at 0% 100%, rgba(139, 92, 246, 0.05), transparent);
+  min-height: 100vh;
+}
+
+.font-brand {
+  font-family: var(--font-bebas), Impact, sans-serif;
+}
+
+/* Grid ciberpunk de fondo */
+.cyber-grid {
+  background-image:
+    linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Botón neón */
+.btn-neon {
+  border-radius: 0.75rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, rgba(0, 245, 255, 0.15), rgba(255, 0, 128, 0.15));
+  border: 1px solid rgba(0, 245, 255, 0.35);
+  color: white;
+  transition: all 0.25s ease;
+}
+
+.btn-neon:hover {
+  background: linear-gradient(135deg, rgba(0, 245, 255, 0.25), rgba(255, 0, 128, 0.25));
+  box-shadow: 0 0 20px rgba(0, 245, 255, 0.2), 0 0 40px rgba(255, 0, 128, 0.1);
+  transform: translateY(-1px);
+}
+
+.btn-neon-outline {
+  border-radius: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #d4d4d8;
+  background: transparent;
+  transition: all 0.25s ease;
+}
+
+.btn-neon-outline:hover {
+  border-color: rgba(0, 245, 255, 0.4);
+  color: var(--neon-cyan);
+  background: rgba(0, 245, 255, 0.05);
+}
+
+/* Animación hero */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Superficies glass — evita clases arbitrarias que rompen el parser CSS */
+.glass-surface {
+  background-color: rgb(255 255 255 / 0.02);
+}
+
+.glass-surface-elevated {
+  background-color: rgb(255 255 255 / 0.03);
+}
+
+.border-glass {
+  border-color: rgb(255 255 255 / 0.08);
+}
+
+.header-blur {
+  background-color: rgb(7 7 15 / 0.8);
+}
+
+.product-overlay {
+  background-image: radial-gradient(
+    circle at 50% 120%,
+    rgb(0 0 0 / 0.5),
+    transparent 60%
+  );
+}
+
+.shadow-neon-cyan {
+  box-shadow: 0 0 30px rgb(0 255 255 / 0.08);
+}
+
+.shadow-neon-cyan-strong {
+  box-shadow: 0 0 30px rgb(0 255 255 / 0.25);
+}
+
+.shadow-neon-magenta {
+  box-shadow: 0 0 24px rgb(255 0 128 / 0.06);
+}
+
+.shadow-neon-magenta-strong {
+  box-shadow: 0 0 40px rgb(255 0 128 / 0.35);
+}
+
+.card-hover-cyan:hover {
+  box-shadow: 0 0 30px rgb(0 255 255 / 0.08);
+}
+
+.category-hover-magenta:hover {
+  box-shadow: 0 0 24px rgb(255 0 128 / 0.06);
+}
