@@ -1,6 +1,8 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import { CategoryCard } from "@/components/CategoryCard";
 import { ProductCard } from "@/components/ProductCard";
 import { getCategories, getProducts } from "@/lib/store";
+import Image from "next/image";
 import Link from "next/link";
 
 export default async function Home() {
@@ -14,8 +16,17 @@ export default async function Home() {
 
   return (
     <main className="flex-1">
-      <section className="relative overflow-hidden border-b border-white/5">
-        <div className="cyber-grid absolute inset-0 opacity-60" />
+      <section className="hero-edmacars relative overflow-hidden border-b border-white/5">
+        <Image
+          src="/hero-bg.jpg"
+          alt=""
+          fill
+          className="object-cover opacity-35"
+          priority
+          sizes="100vw"
+        />
+        <div className="hero-edmacars-overlay absolute inset-0" />
+        <div className="cyber-grid absolute inset-0 opacity-40" />
         <div className="absolute left-1/2 top-0 h-px w-2/3 -translate-x-1/2 bg-gradient-to-r from-transparent via-neon-cyan/50 to-transparent" />
 
         <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
@@ -25,12 +36,12 @@ export default async function Home() {
               Tecnología de primera mano
             </p>
 
-            <h1 className="font-brand text-5xl leading-none tracking-wide text-white sm:text-7xl lg:text-8xl">
-              EDMA<span className="text-neon-cyan">CARS</span>
-              <span className="mt-2 block text-2xl font-sans font-light tracking-normal text-zinc-400 sm:text-3xl">
+            <div className="flex flex-col items-center">
+              <BrandLogo size="hero" />
+              <p className="mt-4 text-2xl font-light tracking-normal text-zinc-300 sm:text-3xl">
                 Tu tienda tech en El Salvador
-              </span>
-            </h1>
+              </p>
+            </div>
 
             <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-zinc-500 sm:text-lg">
               Smartphones, laptops, gaming y accesorios con envío personalizado.

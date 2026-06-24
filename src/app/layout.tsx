@@ -21,6 +21,10 @@ export const metadata: Metadata = {
   title: "Edmacars Store — Tecnología y Accesorios",
   description:
     "Tienda online de productos tecnológicos de primera mano. Smartphones, laptops, gaming y más. El Salvador.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({

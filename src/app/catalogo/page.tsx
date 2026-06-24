@@ -1,5 +1,7 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import { ProductCard } from "@/components/ProductCard";
 import { getCategories, getProducts } from "@/lib/store";
+import Image from "next/image";
 import Link from "next/link";
 
 type PageProps = {
@@ -19,12 +21,14 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
 
   return (
     <main className="flex-1">
-      <section className="border-b border-white/5 bg-surface/30">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden border-b border-white/5">
+        <Image src="/fondoapk.png" alt="" fill className="object-cover opacity-20" sizes="100vw" />
+        <div className="hero-edmacars-overlay absolute inset-0" />
+        <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <p className="text-xs font-semibold uppercase tracking-widest text-neon-cyan">Catálogo</p>
-          <h1 className="mt-2 font-brand text-4xl tracking-wide text-white sm:text-5xl">
-            EDMA<span className="text-neon-cyan">CARS</span> Store
-          </h1>
+          <div className="mt-3">
+            <BrandLogo size="lg" />
+          </div>
           <p className="mt-3 max-w-xl text-sm text-zinc-500">
             {activeCategory
               ? `Productos en ${activeCategory.name}`

@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 
 const navLinks = [
@@ -10,14 +11,12 @@ export function Header() {
   return (
     <header className="header-blur sticky top-0 z-50 border-b border-white/5 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="group flex items-center gap-2">
-          <span className="font-brand text-xl tracking-wider text-white sm:text-2xl">
-            EDMA<span className="text-neon-cyan">CARS</span>
-          </span>
+        <div className="flex items-center gap-2">
+          <BrandLogo size="sm" linked />
           <span className="hidden rounded border border-neon-magenta/40 bg-neon-magenta/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-neon-magenta sm:inline">
             Store
           </span>
-        </Link>
+        </div>
 
         <nav className="hidden items-center gap-1 md:flex">
           {navLinks.map((link) => (

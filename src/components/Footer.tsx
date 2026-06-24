@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import Link from "next/link";
 
 export function Footer() {
@@ -6,9 +7,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-10 md:grid-cols-3">
           <div>
-            <p className="font-brand text-lg tracking-wider text-white">
-              EDMA<span className="text-neon-cyan">CARS</span>
-            </p>
+            <BrandLogo size="sm" />
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-zinc-500">
               Tecnología de primera mano y accesorios. Envíos en El Salvador con atención personalizada.
             </p>
