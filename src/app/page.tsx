@@ -1,12 +1,19 @@
 import { CategoryCard } from "@/components/CategoryCard";
 import { ProductCard } from "@/components/ProductCard";
-import { categories, featuredProducts } from "@/lib/mock-data";
+import { getCategories, getProducts } from "@/lib/store";
 import Link from "next/link";
 
-export default function Home() {
+export default async function Home() {
+  const [categories, featuredProducts] = await Promise.all([
+    getCategories(),
+    getProducts({ limit: 4 }),
+  ]);
+
+  const productCountLabel =
+    featuredProducts.length > 0 ? `${featuredProducts.length}+` : "—";
+
   return (
     <main className="flex-1">
-      {/* Hero */}
       <section className="relative overflow-hidden border-b border-white/5">
         <div className="cyber-grid absolute inset-0 opacity-60" />
         <div className="absolute left-1/2 top-0 h-px w-2/3 -translate-x-1/2 bg-gradient-to-r from-transparent via-neon-cyan/50 to-transparent" />
@@ -27,23 +34,22 @@ export default function Home() {
 
             <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-zinc-500 sm:text-lg">
               Smartphones, laptops, gaming y accesorios con envío personalizado.
-              Estilo mini AliExpress, experiencia futurista.
+              Catálogo conectado a Supabase en tiempo real.
             </p>
 
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link href="/catalogo" className="btn-neon px-8 py-3 text-sm">
                 Explorar catálogo
               </Link>
-              <Link href="/catalogo?filter=ofertas" className="btn-neon-outline px-8 py-3 text-sm">
-                Ver ofertas
+              <Link href="/catalogo" className="btn-neon-outline px-8 py-3 text-sm">
+                Ver productos
               </Link>
             </div>
           </div>
 
-          {/* Stats */}
           <div className="mx-auto mt-16 grid max-w-2xl grid-cols-3 gap-4 rounded-2xl border border-glass glass-surface p-6 backdrop-blur sm:gap-8">
             {[
-              { value: "300+", label: "Productos" },
+              { value: productCountLabel, label: "Productos" },
               { value: "24h", label: "Respuesta" },
               { value: "5%", label: "Desc. fidelidad" },
             ].map((stat) => (
@@ -56,37 +62,35 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Categorías */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-semibold text-white">Categorías</h2>
-            <p className="mt-1 text-sm text-zinc-500">Encuentra lo que buscas al instante</p>
+      {categories.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-semibold text-white">Categorías</h2>
+              <p className="mt-1 text-sm text-zinc-500">Encuentra lo que buscas al instante</p>
+            </div>
+            <Link
+              href="/catalogo"
+              className="hidden text-sm text-neon-cyan transition hover:text-white sm:inline"
+            >
+              Ver todo →
+            </Link>
           </div>
-          <Link
-            href="/catalogo"
-            className="hidden text-sm text-neon-cyan transition hover:text-white sm:inline"
-          >
-            Ver todo →
-          </Link>
-        </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {categories.map((category) => (
-            <CategoryCard key={category.id} category={category} />
-          ))}
-        </div>
-      </section>
+          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {categories.map((category) => (
+              <CategoryCard key={category.id} category={category} />
+            ))}
+          </div>
+        </section>
+      )}
 
-      {/* Destacados */}
       <section className="border-t border-white/5 bg-surface/50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between gap-4">
             <div>
               <h2 className="text-2xl font-semibold text-white">Destacados</h2>
-              <p className="mt-1 text-sm text-zinc-500">
-                Lo más vendido y las mejores ofertas
-              </p>
+              <p className="mt-1 text-sm text-zinc-500">Productos desde Supabase</p>
             </div>
             <Link
               href="/catalogo"
@@ -96,15 +100,20 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {featuredProducts.length === 0 ? (
+            <p className="mt-8 text-center text-sm text-zinc-500">
+              Aún no hay productos. Agrégalos en Supabase Table Editor.
+            </p>
+          ) : (
+            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* CTA */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-3xl border border-neon-violet/20 bg-gradient-to-br from-neon-violet/10 via-transparent to-neon-cyan/10 p-8 sm:p-12">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-neon-magenta/10 blur-3xl animate-pulse-glow" />
@@ -114,7 +123,6 @@ export default function Home() {
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-zinc-400">
               Pronto podrás chatear con nuestro asistente IA powered by Gemini.
-              Recomendaciones personalizadas y respuestas al instante.
             </p>
             <button type="button" className="btn-neon mt-6 px-6 py-2.5 text-sm opacity-80" disabled>
               Asistente IA — próximamente
