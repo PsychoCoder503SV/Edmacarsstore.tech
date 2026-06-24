@@ -13,7 +13,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const gradient = productGradient(categorySlug);
 
   return (
-    <article className="group card-hover-cyan relative flex flex-col overflow-hidden rounded-2xl border border-glass glass-surface-elevated transition duration-300 hover:-translate-y-1 hover:border-neon-cyan/30">
+    <article className={`group card-hover-cyan relative flex flex-col overflow-hidden rounded-2xl border border-glass glass-surface-elevated transition duration-300 hover:-translate-y-1 hover:border-neon-cyan/30 ${product.stock <= 0 ? "opacity-75" : ""}`}>
       <Link href={`/producto/${product.slug}`} className="block">
         <div
           className={`relative aspect-[4/3] bg-gradient-to-br ${gradient} flex items-center justify-center overflow-hidden`}
@@ -32,11 +32,15 @@ export function ProductCard({ product }: ProductCardProps) {
               {categoryIcon(categorySlug)}
             </span>
           )}
-          {product.stock <= 3 && product.stock > 0 && (
+          {product.stock <= 0 ? (
+            <span className="absolute left-3 top-3 rounded-full border border-zinc-500/40 bg-zinc-800/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-300">
+              agotado
+            </span>
+          ) : product.stock <= 3 ? (
             <span className="absolute left-3 top-3 rounded-full border border-amber-400/30 bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
               últimas unidades
             </span>
-          )}
+          ) : null}
         </div>
       </Link>
 
