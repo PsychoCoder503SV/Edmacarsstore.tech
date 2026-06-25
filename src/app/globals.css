@@ -207,3 +207,147 @@ body {
 .checkout-input::placeholder {
   color: #71717a;
 }
+
+.checkout-input-error {
+  border-color: rgb(248 113 113 / 0.55);
+}
+
+.checkout-input-error:focus {
+  border-color: rgb(248 113 113 / 0.75);
+}
+
+/* MapLibre — mapa nativo checkout */
+.delivery-map-canvas {
+  background: var(--surface);
+}
+
+.delivery-map-canvas .maplibregl-canvas {
+  outline: none;
+}
+
+.delivery-map-permission-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(7 7 15 / 0.72);
+  backdrop-filter: blur(6px);
+  padding: 1rem;
+}
+
+.delivery-map-permission-card {
+  width: min(100%, 22rem);
+  border-radius: 1rem;
+  border: 1px solid rgb(0 245 255 / 0.25);
+  background: rgb(13 13 24 / 0.95);
+  padding: 1rem 1.1rem;
+  box-shadow: 0 0 30px rgb(0 245 255 / 0.12);
+}
+
+.delivery-map-live-badge {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(0 245 255 / 0.35);
+  background: rgb(7 7 15 / 0.88);
+  color: var(--neon-cyan);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.delivery-map-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 10px var(--neon-cyan);
+  animation: delivery-live-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes delivery-live-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.65; }
+}
+
+.delivery-map-canvas .maplibregl-ctrl-group {
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(13 13 24 / 0.92);
+  box-shadow: 0 4px 20px rgb(0 0 0 / 0.35);
+}
+
+.delivery-map-canvas .maplibregl-ctrl-group button {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.delivery-map-canvas .maplibregl-ctrl-group button:hover {
+  background: rgb(0 245 255 / 0.1);
+}
+
+.delivery-map-canvas .maplibregl-ctrl-group button span {
+  filter: invert(1) brightness(0.85);
+}
+
+.delivery-map-marker {
+  width: 28px;
+  height: 28px;
+  border-radius: 50% 50% 50% 0;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+  transform: rotate(-45deg);
+  border: 2px solid white;
+  box-shadow: 0 0 18px rgb(0 245 255 / 0.55);
+}
+
+.delivery-map-gps-btn {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(0 245 255 / 0.35);
+  background: rgb(7 7 15 / 0.88);
+  color: var(--neon-cyan);
+  padding: 0.5rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.delivery-map-gps-btn:hover:not(:disabled) {
+  background: rgb(0 245 255 / 0.12);
+  box-shadow: 0 0 16px rgb(0 245 255 / 0.2);
+}
+
+.delivery-map-gps-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.delivery-map-gps-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgb(0 245 255 / 0.25);
+  border-top-color: var(--neon-cyan);
+  border-radius: 50%;
+  animation: delivery-gps-spin 0.8s linear infinite;
+}
+
+@keyframes delivery-gps-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

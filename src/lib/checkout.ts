@@ -34,7 +34,7 @@ export function generateOrderNumber(): string {
 }
 
 export function buildMapUrl(lat: number, lng: number): string {
-  return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`;
+  return `https://www.google.com/maps?q=${lat},${lng}&z=17`;
 }
 
 export function formatOrderMessage(
