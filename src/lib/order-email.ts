@@ -1,5 +1,6 @@
 import type { CheckoutCustomer, PaymentMethod } from "@/lib/checkout";
 import { PAYMENT_LABELS } from "@/lib/checkout";
+import nodemailer from "nodemailer";
 
 type OrderEmailItem = {
   name: string;
@@ -33,6 +34,14 @@ function parseSenderFromString(raw: string): Sender | null {
 }
 
 function resolveSender(): Sender | null {
+  const smtpUser = process.env.SMTP_USER?.trim();
+  if (smtpUser) {
+    return {
+      name: process.env.EMAIL_FROM_NAME?.trim() || "Edmacars Store",
+      email: smtpUser,
+    };
+  }
+
   const fromEnv =
     process.env.EMAIL_FROM_ADDRESS?.trim() ||
     process.env.BREVO_FROM_EMAIL?.trim() ||
@@ -155,6 +164,40 @@ export function buildOrderConfirmationHtml(
 </html>`;
 }
 
+async function sendViaSmtp(
+  sender: Sender,
+  to: string,
+  subject: string,
+  html: string
+): Promise<boolean> {
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASS?.trim();
+  if (!user || !pass) return false;
+
+  const host = process.env.SMTP_HOST?.trim() || "smtp.gmail.com";
+  const port = Number(process.env.SMTP_PORT || 587);
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+
+  try {
+    await transporter.sendMail({
+      from: `"${sender.name}" <${user}>`,
+      to,
+      subject,
+      html,
+    });
+    return true;
+  } catch (err) {
+    console.error("[order-email] smtp failed", err);
+    return false;
+  }
+}
+
 async function sendViaBrevo(
   sender: Sender,
   to: string,
@@ -235,8 +278,15 @@ export async function sendOrderConfirmationEmail(
   const to = customer.email.trim();
 
   const provider = process.env.EMAIL_PROVIDER?.trim().toLowerCase() || "auto";
+  const hasSmtp = Boolean(process.env.SMTP_USER?.trim() && process.env.SMTP_PASS?.trim());
 
   try {
+    if (provider === "smtp" || (provider === "auto" && hasSmtp)) {
+      const ok = await sendViaSmtp(sender, to, subject, html);
+      if (ok) return true;
+      if (provider === "smtp") return false;
+    }
+
     if (provider === "brevo" || (provider === "auto" && process.env.BREVO_API_KEY)) {
       const ok = await sendViaBrevo(sender, to, customer.fullName, subject, html);
       if (ok) return true;
