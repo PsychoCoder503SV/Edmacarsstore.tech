@@ -55,6 +55,12 @@ function ConfirmadoContent() {
         </p>
       </div>
 
+      {data.accountWarning && (
+        <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+          {data.accountWarning}
+        </div>
+      )}
+
       <div className="mt-6 space-y-4 rounded-2xl border border-glass glass-surface-elevated p-6">
         <div className="flex justify-between border-b border-white/10 pb-4">
           <div>

@@ -56,7 +56,14 @@ export default function AccederPage() {
       await refresh();
       router.replace("/cuenta");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al acceder");
+      const msg = err instanceof Error ? err.message : "Error al acceder";
+      if (/rate limit|too many/i.test(msg)) {
+        setError(
+          "Supabase limitó el envío de correos (muchas pruebas seguidas). Espera ~1 hora o desactiva confirmación por email en el panel de Supabase."
+        );
+      } else {
+        setError(msg);
+      }
       setSubmitting(false);
     }
   }

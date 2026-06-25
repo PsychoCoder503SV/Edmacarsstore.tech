@@ -136,18 +136,30 @@ export function CheckoutForm() {
     return data;
   }
 
-  async function maybeCreateAccount(): Promise<string | null> {
-    if (isLoggedIn) return user.id;
-    if (checkoutMode !== "guest" || !createAccount) return null;
+  async function maybeCreateAccount(): Promise<{ userId: string | null; accountWarning: string | null }> {
+    if (isLoggedIn) return { userId: user.id, accountWarning: null };
+    if (checkoutMode !== "guest" || !createAccount) return { userId: null, accountWarning: null };
 
     const { data, error: signErr } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: { data: { full_name: fullName.trim(), phone: customer().phone } },
     });
-    if (signErr) throw new Error(signErr.message);
+
+    if (signErr) {
+      const rateLimited = /rate limit|too many/i.test(signErr.message);
+      if (rateLimited) {
+        return {
+          userId: null,
+          accountWarning:
+            "Tu pedido se registró correctamente. La cuenta no se pudo crear ahora (límite de correos de Supabase). Intenta crear tu cuenta más tarde en Acceder.",
+        };
+      }
+      throw new Error(signErr.message);
+    }
+
     await refresh();
-    return data.user?.id ?? null;
+    return { userId: data.user?.id ?? null, accountWarning: null };
   }
 
   async function handleQuickLogin() {
@@ -190,7 +202,7 @@ export function CheckoutForm() {
 
     try {
       const num = generateOrderNumber();
-      const userId = await maybeCreateAccount();
+      const { userId, accountWarning } = await maybeCreateAccount();
       await saveOrder(num, userId);
 
       saveOrderConfirmation({
@@ -204,6 +216,7 @@ export function CheckoutForm() {
         })),
         total,
         createdAt: new Date().toISOString(),
+        accountWarning: accountWarning ?? undefined,
       });
 
       clearCart();
