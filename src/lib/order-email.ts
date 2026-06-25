@@ -231,6 +231,38 @@ async function sendViaBrevo(
   return true;
 }
 
+async function sendViaSendGrid(
+  sender: Sender,
+  to: string,
+  subject: string,
+  html: string
+): Promise<boolean> {
+  const apiKey = process.env.SENDGRID_API_KEY?.trim();
+  if (!apiKey) return false;
+
+  const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      personalizations: [{ to: [{ email: to }] }],
+      from: { email: sender.email, name: sender.name },
+      subject,
+      content: [{ type: "text/html", value: html }],
+    }),
+    signal: AbortSignal.timeout(15000),
+  });
+
+  if (!res.ok) {
+    console.error("[order-email] sendgrid failed", await res.text());
+    return false;
+  }
+
+  return true;
+}
+
 async function sendViaResend(
   sender: Sender,
   to: string,
@@ -269,7 +301,7 @@ export async function sendOrderConfirmationEmail(
 ): Promise<boolean> {
   const sender = resolveSender();
   if (!sender) {
-    console.error("[order-email] missing EMAIL_FROM_ADDRESS or BREVO_FROM_EMAIL");
+    console.error("[order-email] falta EMAIL_FROM_ADDRESS o SMTP_USER");
     return false;
   }
 
@@ -281,6 +313,12 @@ export async function sendOrderConfirmationEmail(
   const hasSmtp = Boolean(process.env.SMTP_USER?.trim() && process.env.SMTP_PASS?.trim());
 
   try {
+    if (provider === "sendgrid" || (provider === "auto" && process.env.SENDGRID_API_KEY)) {
+      const ok = await sendViaSendGrid(sender, to, subject, html);
+      if (ok) return true;
+      if (provider === "sendgrid") return false;
+    }
+
     if (provider === "smtp" || (provider === "auto" && hasSmtp)) {
       const ok = await sendViaSmtp(sender, to, subject, html);
       if (ok) return true;
