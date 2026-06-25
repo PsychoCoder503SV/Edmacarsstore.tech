@@ -1,58 +1,37 @@
-/** Notificación interna a la tienda — solo servidor, nunca expuesto al cliente. */
+/**
+ * Envío interno a WhatsApp — invisible para el cliente.
+ * Usa el puente propio (whatsapp-bridge) con tu sesión de WhatsApp, sin API de Meta.
+ */
 
 function notifyNumber(): string | null {
-  const raw =
-    process.env.WHATSAPP_NOTIFY_NUMBER ??
-    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ??
-    "";
+  const raw = process.env.WHATSAPP_NOTIFY_NUMBER ?? "";
   const digits = raw.replace(/\D/g, "");
   return digits.length >= 8 ? digits : null;
 }
 
-async function sendViaCloudApi(message: string, to: string): Promise<boolean> {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN;
-  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  if (!token || !phoneId) return false;
+async function sendViaInternalBridge(message: string): Promise<boolean> {
+  const base = process.env.WHATSAPP_BRIDGE_URL?.replace(/\/$/, "");
+  const secret = process.env.WHATSAPP_BRIDGE_SECRET;
+  if (!base || !secret) return false;
 
-  const res = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
+  const res = await fetch(`${base}/send`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      "x-bridge-secret": secret,
     },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to,
-      type: "text",
-      text: { body: message },
-    }),
+    body: JSON.stringify({ message }),
   });
 
   return res.ok;
 }
 
-async function sendViaCallMeBot(message: string, to: string): Promise<boolean> {
-  const apiKey = process.env.WHATSAPP_CALLMEBOT_APIKEY;
-  if (!apiKey) return false;
-
-  const url = new URL("https://api.callmebot.com/whatsapp.php");
-  url.searchParams.set("phone", `+${to}`);
-  url.searchParams.set("text", message);
-  url.searchParams.set("apikey", apiKey);
-
-  const res = await fetch(url.toString(), { method: "GET" });
-  return res.ok;
-}
-
-/** Envía el pedido a la tienda en segundo plano. No lanza error al cliente si falla el canal. */
 export async function notifyStoreOrder(message: string): Promise<void> {
-  const to = notifyNumber();
-  if (!to) return;
+  if (!notifyNumber()) return;
 
   try {
-    if (await sendViaCloudApi(message, to)) return;
-    await sendViaCallMeBot(message, to);
+    await sendViaInternalBridge(message);
   } catch {
-    // Canal interno: el pedido ya quedó en Supabase.
+    // Pedido ya guardado en Supabase.
   }
 }
