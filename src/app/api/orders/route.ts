@@ -70,6 +70,28 @@ export async function POST(request: Request) {
     const shipping_address = buildShippingRecord(orderNumber, paymentMethod, customer, trackToken);
     const resolvedUserId = await resolveOrderUserId(supabase, userId, customer, paymentMethod);
 
+    for (const item of items) {
+      const { data: product, error: stockErr } = await supabase
+        .from("products")
+        .select("id, name, stock")
+        .eq("id", item.productId)
+        .single();
+
+      if (stockErr || !product) {
+        return NextResponse.json(
+          { error: `Producto no encontrado: ${item.name}` },
+          { status: 400 }
+        );
+      }
+
+      if (Number(product.stock) < item.quantity) {
+        return NextResponse.json(
+          { error: `Stock insuficiente para "${product.name}" (${product.stock} disponibles)` },
+          { status: 400 }
+        );
+      }
+    }
+
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
@@ -94,7 +116,19 @@ export async function POST(request: Request) {
 
     const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
     if (itemsError) {
+      await supabase.from("orders").delete().eq("id", order.id);
       return NextResponse.json({ error: itemsError.message }, { status: 500 });
+    }
+
+    for (const item of items) {
+      const { data: product } = await supabase
+        .from("products")
+        .select("stock")
+        .eq("id", item.productId)
+        .single();
+      if (!product) continue;
+      const nextStock = Math.max(0, Number(product.stock) - item.quantity);
+      await supabase.from("products").update({ stock: nextStock }).eq("id", item.productId);
     }
 
     const message = formatOrderMessage(
