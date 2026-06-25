@@ -29,8 +29,13 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/pedido/seguimiento" className="transition hover:text-neon-cyan">
+                  Seguimiento de pedido
+                </Link>
+              </li>
+              <li>
                 <Link href="/cuenta/pedidos" className="transition hover:text-neon-cyan">
-                  Mis pedidos
+                  Mis pedidos (cuenta)
                 </Link>
               </li>
             </ul>

@@ -141,9 +141,23 @@ function ConfirmadoContent() {
         </div>
       )}
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-zinc-400">
+        <p className="font-medium text-zinc-200">Seguimiento de tu pedido</p>
+        <p className="mt-1 text-xs">
+          Guarda tu número <span className="font-mono text-neon-cyan">{data.orderNumber}</span> y el
+          email del pedido para consultar el estado cuando quieras.
+        </p>
+        <Link
+          href={`/pedido/seguimiento?orden=${encodeURIComponent(data.orderNumber)}`}
+          className="btn-neon-outline mt-3 inline-block px-4 py-2 text-xs"
+        >
+          Rastrear este pedido
+        </Link>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
         <Link href="/cuenta/pedidos" className="btn-neon-outline flex-1 py-2.5 text-center text-sm">
-          Ver mis pedidos
+          Mis pedidos (con cuenta)
         </Link>
         <Link href="/catalogo" className="btn-neon flex-1 py-2.5 text-center text-sm">
           Seguir comprando
