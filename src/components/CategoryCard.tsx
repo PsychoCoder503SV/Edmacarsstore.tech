@@ -20,7 +20,7 @@ export function CategoryCard({ category, productCount }: CategoryCardProps) {
         {category.name}
       </h3>
       {productCount !== undefined && (
-        <p className="mt-1 text-xs text-zinc-600">{productCount} productos · ver galería</p>
+        <p className="mt-1 text-xs text-zinc-600">{productCount} productos</p>
       )}
     </Link>
   );

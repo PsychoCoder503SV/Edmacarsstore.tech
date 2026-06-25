@@ -1,10 +1,6 @@
 import { BrandLogo } from "@/components/BrandLogo";
-import { ProductImage } from "@/components/ProductImage";
-import {
-  getCategoryBySlug,
-  getCategoryGalleryImages,
-  getProducts,
-} from "@/lib/store";
+import { ProductCard } from "@/components/ProductCard";
+import { getCategoryBySlug, getProducts } from "@/lib/store";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,13 +9,12 @@ type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
-export default async function CategoriaGalleryPage({ params }: PageProps) {
+export default async function CategoriaPage({ params }: PageProps) {
   const { slug } = await params;
   const category = await getCategoryBySlug(slug);
   if (!category) notFound();
 
   const products = await getProducts({ categorySlug: slug });
-  const gallery = getCategoryGalleryImages(products);
 
   return (
     <main className="flex-1">
@@ -31,43 +26,28 @@ export default async function CategoriaGalleryPage({ params }: PageProps) {
             ← Inicio
           </Link>
           <div className="mt-4">
-            <BrandLogo size="md" />
+            <BrandLogo size="lg" showName />
           </div>
           <h1 className="mt-4 text-3xl font-semibold text-white">{category.name}</h1>
           <p className="mt-2 text-sm text-zinc-400">
-            Galería de fotos — {gallery.length} imagen{gallery.length !== 1 ? "es" : ""}
+            {products.length} producto{products.length !== 1 ? "s" : ""} disponible
+            {products.length !== 1 ? "s" : ""} en esta categoría
           </p>
-          <Link
-            href={`/catalogo?categoria=${slug}`}
-            className="btn-neon-outline mt-6 inline-block px-5 py-2 text-sm"
-          >
-            Ver catálogo con precios
+          <Link href="/catalogo" className="btn-neon-outline mt-6 inline-block px-5 py-2 text-sm">
+            Ver catálogo completo
           </Link>
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        {gallery.length === 0 ? (
+        {products.length === 0 ? (
           <p className="text-center text-sm text-zinc-500">
-            Esta categoría aún no tiene fotos. Súbelas desde la APK.
+            Esta categoría aún no tiene productos publicados.
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {gallery.map((item, index) => (
-              <figure
-                key={`${item.url}-${index}`}
-                className="group relative aspect-square overflow-hidden rounded-xl border border-glass glass-surface-elevated"
-              >
-                <ProductImage
-                  src={item.url}
-                  alt={item.productName}
-                  fill
-                  className="object-cover transition duration-300 group-hover:scale-105"
-                />
-                <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2 text-[11px] text-zinc-200">
-                  {item.productName}
-                </figcaption>
-              </figure>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         )}

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Bebas_Neue, Outfit } from "next/font/google";
 import { AuthProvider } from "@/lib/auth";
 import { CartProvider } from "@/components/CartProvider";
-import { ChatbotFab } from "@/components/ChatbotFab";
+import { SupportChat } from "@/components/SupportChat";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import "./globals.css";
@@ -38,7 +38,7 @@ export default function RootLayout({
             <Header />
             <div className="flex flex-1 flex-col">{children}</div>
             <Footer />
-            <ChatbotFab />
+            <SupportChat />
           </CartProvider>
         </AuthProvider>
       </body>

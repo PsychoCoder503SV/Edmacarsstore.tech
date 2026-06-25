@@ -21,7 +21,7 @@ export function CategoryProductsSection({ section }: Props) {
             href={`/categoria/${section.slug}`}
             className="text-sm text-neon-cyan transition hover:text-white"
           >
-            Ver galería de fotos →
+            Ver todos →
           </Link>
         </div>
 
