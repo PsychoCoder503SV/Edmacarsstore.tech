@@ -22,7 +22,7 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
   return (
     <main className="flex-1">
       <section className="relative overflow-hidden border-b border-white/5">
-        <Image src="/fondoapk.png" alt="" fill className="object-cover opacity-20" sizes="100vw" />
+        <Image src="/fondoweb.webp" alt="" fill className="object-cover opacity-30" sizes="100vw" />
         <div className="hero-edmacars-overlay absolute inset-0" />
         <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <p className="text-xs font-semibold uppercase tracking-widest text-neon-cyan">Catálogo</p>

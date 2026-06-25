@@ -28,13 +28,15 @@ html {
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-outfit), system-ui, sans-serif;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 245, 255, 0.08), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(255, 0, 128, 0.06), transparent),
-    radial-gradient(ellipse 50% 30% at 0% 100%, rgba(139, 92, 246, 0.05), transparent);
+    linear-gradient(180deg, rgba(7, 7, 15, 0.82) 0%, rgba(7, 7, 15, 0.92) 100%),
+    url("/fondoweb.webp");
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
   min-height: 100vh;
 }
 

@@ -18,10 +18,10 @@ export default async function Home() {
     <main className="flex-1">
       <section className="hero-edmacars relative overflow-hidden border-b border-white/5">
         <Image
-          src="/hero-bg.jpg"
+          src="/fondoweb.webp"
           alt=""
           fill
-          className="object-cover opacity-35"
+          className="object-cover opacity-45"
           priority
           sizes="100vw"
         />
