@@ -1,17 +1,15 @@
 import { BrandLogo } from "@/components/BrandLogo";
 import { CategoryCard } from "@/components/CategoryCard";
-import { CategoryProductsSection } from "@/components/CategoryProductsSection";
 import { ProductCard } from "@/components/ProductCard";
 import { getCategories, getProducts, getProductsByCategory } from "@/lib/store";
 import Image from "next/image";
 import Link from "next/link";
 
 export default async function Home() {
-  const [categories, categorySections, allProducts, featuredProducts] = await Promise.all([
+  const [categories, categorySections, allProducts] = await Promise.all([
     getCategories(),
     getProductsByCategory(),
     getProducts(),
-    getProducts({ limit: 8 }),
   ]);
 
   const productCountLabel = allProducts.length > 0 ? String(allProducts.length) : "0";
@@ -49,11 +47,11 @@ export default async function Home() {
             </p>
 
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link href="/catalogo" className="btn-neon px-8 py-3 text-sm">
-                Explorar catálogo
+              <Link href="#todos-los-productos" className="btn-neon px-8 py-3 text-sm">
+                Ver productos
               </Link>
-              <Link href="#destacados" className="btn-neon-outline px-8 py-3 text-sm">
-                Ver destacados
+              <Link href="#categorias" className="btn-neon-outline px-8 py-3 text-sm">
+                Por categoría
               </Link>
             </div>
           </div>
@@ -73,23 +71,23 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="destacados" className="border-t border-white/5 bg-surface/40 py-16">
+      <section id="todos-los-productos" className="border-t border-white/5 bg-surface/40 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-semibold text-white">Destacados</h2>
-              <p className="mt-1 text-sm text-zinc-500">Lo más reciente del catálogo</p>
+              <h2 className="text-2xl font-semibold text-white">Todos los productos</h2>
+              <p className="mt-1 text-sm text-zinc-500">Catálogo completo de la tienda</p>
             </div>
             <Link href="/catalogo" className="text-sm text-neon-magenta transition hover:text-white">
-              Ver todo →
+              Ver catálogo →
             </Link>
           </div>
 
-          {featuredProducts.length === 0 ? (
-            <p className="mt-10 text-center text-sm text-zinc-500">Pronto habrá productos destacados.</p>
+          {allProducts.length === 0 ? (
+            <p className="mt-10 text-center text-sm text-zinc-500">Pronto habrá productos disponibles.</p>
           ) : (
             <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {featuredProducts.map((product) => (
+              {allProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
@@ -98,10 +96,10 @@ export default async function Home() {
       </section>
 
       {categories.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <section id="categorias" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div>
             <h2 className="text-2xl font-semibold text-white">Categorías</h2>
-            <p className="mt-1 text-sm text-zinc-500">Elige una categoría para ver su galería</p>
+            <p className="mt-1 text-sm text-zinc-500">Explora por tipo de producto y ver galería de fotos</p>
           </div>
 
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -117,12 +115,6 @@ export default async function Home() {
           </div>
         </section>
       )}
-
-      <div id="productos-por-categoria">
-        {categorySections.map((section) => (
-          <CategoryProductsSection key={section.id} section={section} />
-        ))}
-      </div>
     </main>
   );
 }

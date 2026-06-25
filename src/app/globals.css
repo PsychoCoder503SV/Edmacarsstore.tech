@@ -187,3 +187,23 @@ body {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(0.94); box-shadow: 0 0 18px rgb(0 245 255 / 0.35); }
 }
+
+.checkout-input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background-color: rgb(255 255 255 / 0.03);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.checkout-input:focus {
+  border-color: rgb(0 245 255 / 0.4);
+}
+
+.checkout-input::placeholder {
+  color: #71717a;
+}

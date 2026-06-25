@@ -78,9 +78,9 @@ export function CartPageClient() {
           <span className="text-zinc-400">Total</span>
           <span className="text-2xl font-bold text-white">${cartTotal(items).toFixed(2)}</span>
         </div>
-        <button type="button" className="btn-neon mt-4 w-full py-3 text-sm" disabled>
-          Confirmar pedido — próximamente
-        </button>
+        <Link href="/checkout" className="btn-neon mt-4 block w-full py-3 text-center text-sm">
+          Confirmar pedido
+        </Link>
         <button
           type="button"
           className="mt-3 w-full text-center text-xs text-zinc-500 hover:text-zinc-300"

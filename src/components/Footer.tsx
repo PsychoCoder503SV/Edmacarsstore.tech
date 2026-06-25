@@ -29,8 +29,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/auth/registro" className="transition hover:text-neon-cyan">
-                  Crear cuenta
+                <Link href="/cuenta/pedidos" className="transition hover:text-neon-cyan">
+                  Mis pedidos
                 </Link>
               </li>
             </ul>
