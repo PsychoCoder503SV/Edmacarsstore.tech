@@ -122,7 +122,8 @@ export default function DeliveryMap({ lat, lng, onChange }: Props) {
       map.remove();
       mapRef.current = null;
     };
-  }, [lat, lng, placeMarker]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- init once; lat/lng synced below
+  }, [placeMarker]);
 
   useEffect(() => {
     const map = mapRef.current;

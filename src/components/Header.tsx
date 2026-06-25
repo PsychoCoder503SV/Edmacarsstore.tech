@@ -34,9 +34,11 @@ export function Header() {
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href={user ? "/cuenta" : "/cuenta/acceder"}
-            className="hidden rounded-lg border border-white/10 px-3 py-2 text-sm text-zinc-400 transition hover:border-neon-cyan/40 hover:text-neon-cyan sm:inline-block"
+            aria-label={user ? "Mi cuenta" : "Acceder"}
+            className="inline-flex min-h-10 min-w-10 items-center justify-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-2 text-sm text-zinc-400 transition hover:border-neon-cyan/40 hover:text-neon-cyan sm:min-h-0 sm:min-w-0 sm:px-3"
           >
-            {user ? "Mi cuenta" : "Acceder"}
+            <UserIcon className="h-[18px] w-[18px] shrink-0 sm:hidden" />
+            <span className="hidden sm:inline">{user ? "Mi cuenta" : "Acceder"}</span>
           </Link>
           <button
             type="button"
@@ -49,6 +51,15 @@ export function Header() {
         </div>
       </div>
     </header>
+  );
+}
+
+function UserIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" strokeLinecap="round" />
+    </svg>
   );
 }
 

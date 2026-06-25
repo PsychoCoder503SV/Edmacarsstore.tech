@@ -2,6 +2,7 @@
 
 import { ChatMessageContent } from "@/components/ChatMessageContent";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 type ChatMessage = {
@@ -14,6 +15,8 @@ const WELCOME =
   "Hola, soy el asistente de Edmacars. Pregúntame por productos, precios, stock o recomendaciones según nuestro catálogo. Atención 24/7.";
 
 export function SupportChat() {
+  const pathname = usePathname();
+  const hideFab = pathname === "/checkout";
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -74,7 +77,7 @@ export function SupportChat() {
 
   return (
     <>
-      {!open && (
+      {!open && !hideFab && (
         <button
           type="button"
           onClick={() => setOpen(true)}

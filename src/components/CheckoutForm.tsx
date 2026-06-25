@@ -445,29 +445,38 @@ export function CheckoutForm() {
             <p className="mt-1 text-xs text-zinc-500">Elige cómo deseas pagar</p>
           </div>
 
-          <div className="space-y-2">
-            {PAYMENT_OPTIONS.map((opt) => (
-              <label
-                key={opt.id}
-                className={`flex cursor-pointer items-center justify-between rounded-xl border p-4 transition ${
-                  payment === opt.id
-                    ? "border-neon-cyan/40 bg-neon-cyan/5"
-                    : "border-white/10 opacity-80"
-                } ${!opt.enabled ? "cursor-not-allowed opacity-40" : ""}`}
-              >
-                <div className="flex items-center gap-3">
-                  <input
-                    type="radio"
-                    name="payment"
-                    disabled={!opt.enabled}
-                    checked={payment === opt.id}
-                    onChange={() => setPayment(opt.id)}
-                  />
-                  <span className="text-sm text-zinc-200">{PAYMENT_LABELS[opt.id]}</span>
-                </div>
-                {opt.hint && <span className="text-xs text-zinc-500">{opt.hint}</span>}
-              </label>
-            ))}
+          <div className="space-y-2" role="radiogroup" aria-label="Método de pago">
+            {PAYMENT_OPTIONS.map((opt) => {
+              const selected = payment === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  disabled={!opt.enabled}
+                  onClick={() => setPayment(opt.id)}
+                  className={`flex w-full min-h-[52px] touch-manipulation items-center justify-between rounded-xl border px-4 py-3 text-left transition active:scale-[0.99] ${
+                    selected
+                      ? "border-neon-cyan/40 bg-neon-cyan/5"
+                      : "border-white/10 bg-white/[0.02]"
+                  } ${!opt.enabled ? "cursor-not-allowed opacity-40" : ""}`}
+                >
+                  <span className="flex items-center gap-3">
+                    <span
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
+                        selected ? "border-neon-cyan bg-neon-cyan" : "border-zinc-500"
+                      }`}
+                      aria-hidden
+                    >
+                      {selected && <span className="h-2 w-2 rounded-full bg-surface" />}
+                    </span>
+                    <span className="text-sm text-zinc-200">{PAYMENT_LABELS[opt.id]}</span>
+                  </span>
+                  {opt.hint && <span className="text-xs text-zinc-500">{opt.hint}</span>}
+                </button>
+              );
+            })}
           </div>
 
           {payment === "transferencia" && (
