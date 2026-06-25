@@ -257,6 +257,16 @@ body {
   border-color: rgb(248 113 113 / 0.75);
 }
 
+.checkout-payment-panel {
+  contain: layout style;
+  -webkit-overflow-scrolling: touch;
+}
+
+.checkout-payment-option {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 /* MapLibre — mapa nativo checkout */
 .delivery-map-canvas {
   background: var(--surface);

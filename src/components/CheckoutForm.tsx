@@ -3,13 +3,12 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { CheckoutPaymentPanel } from "@/components/CheckoutPaymentPanel";
 import { useCart } from "@/components/CartProvider";
 import { useAuth } from "@/lib/auth";
 import { cartTotal } from "@/lib/cart";
 import {
-  BANK_DETAILS,
-  PAYMENT_LABELS,
   buildMapUrl,
   generateOrderNumber,
   saveOrderConfirmation,
@@ -26,14 +25,14 @@ import {
   type FieldErrors,
 } from "@/lib/validation";
 
-const DeliveryMap = dynamic(() => import("@/components/DeliveryMap"), { ssr: false });
-
-const PAYMENT_OPTIONS: { id: PaymentMethod; enabled: boolean; hint?: string }[] = [
-  { id: "contra_entrega", enabled: true },
-  { id: "transferencia", enabled: true },
-  { id: "paypal", enabled: false, hint: "Próximamente" },
-  { id: "tarjeta", enabled: false, hint: "Próximamente" },
-];
+const DeliveryMap = dynamic(() => import("@/components/DeliveryMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-40 items-center justify-center rounded-2xl border border-neon-cyan/20 bg-surface text-xs text-zinc-500">
+      Cargando mapa…
+    </div>
+  ),
+});
 
 const PASSWORD_RULE_LABELS: { key: keyof ReturnType<typeof getPasswordRules>; label: string }[] = [
   { key: "minLength", label: "Mínimo 8 caracteres" },
@@ -64,7 +63,8 @@ export function CheckoutForm() {
   const [notes, setNotes] = useState("");
   const [lat, setLat] = useState(13.798);
   const [lng, setLng] = useState(-88.91);
-  const [payment, setPayment] = useState<PaymentMethod>("contra_entrega");
+  const [preferredPayment, setPreferredPayment] = useState<PaymentMethod>("contra_entrega");
+  const [mobileMapOpen, setMobileMapOpen] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
   const [password, setPassword] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
@@ -86,9 +86,14 @@ export function CheckoutForm() {
     if (profile?.default_lat != null) setLat(profile.default_lat);
     if (profile?.default_lng != null) setLng(profile.default_lng);
     if (profile?.preferred_payment === "transferencia" || profile?.preferred_payment === "contra_entrega") {
-      setPayment(profile.preferred_payment);
+      setPreferredPayment(profile.preferred_payment);
     }
   }, [user, profile]);
+
+  const handleMapChange = useCallback((a: number, b: number) => {
+    setLat(a);
+    setLng(b);
+  }, []);
 
   const customer = (): CheckoutCustomer => {
     const normalized = normalizeSvPhone(phone.trim());
@@ -114,13 +119,13 @@ export function CheckoutForm() {
     });
   }
 
-  async function saveOrder(num: string, userId?: string | null) {
+  async function saveOrder(num: string, paymentMethod: PaymentMethod, userId?: string | null) {
     const res = await fetch("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         orderNumber: num,
-        paymentMethod: payment,
+        paymentMethod,
         customer: customer(),
         total,
         userId: userId ?? null,
@@ -190,7 +195,7 @@ export function CheckoutForm() {
     setCheckoutMode("guest");
   }
 
-  async function handleConfirm() {
+  async function handleConfirm(payment: PaymentMethod) {
     setError(null);
     const errors = runValidation();
     setFieldErrors(errors);
@@ -200,7 +205,7 @@ export function CheckoutForm() {
       return;
     }
 
-    if (!PAYMENT_OPTIONS.find((p) => p.id === payment)?.enabled) {
+    if (payment !== "contra_entrega" && payment !== "transferencia") {
       setError("Método de pago no disponible");
       return;
     }
@@ -210,7 +215,7 @@ export function CheckoutForm() {
     try {
       const num = generateOrderNumber();
       const { userId, accountWarning, accountSuccess } = await maybeCreateAccount();
-      const orderRes = await saveOrder(num, userId);
+      const orderRes = await saveOrder(num, payment, userId);
 
       saveOrderConfirmation({
         orderNumber: num,
@@ -305,7 +310,7 @@ export function CheckoutForm() {
       )}
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <div className="space-y-6">
+        <div className="order-2 space-y-6 lg:order-1">
           <div>
             <h2 className="text-lg font-semibold text-white">Datos de entrega</h2>
             <p className="mt-1 text-xs text-zinc-500">Información para coordinar tu entrega</p>
@@ -379,7 +384,31 @@ export function CheckoutForm() {
 
           <div>
             <p className="mb-2 text-sm font-medium text-zinc-300">Ubicación en mapa</p>
-            <DeliveryMap lat={lat} lng={lng} onChange={(a, b) => { setLat(a); setLng(b); }} />
+            <div className="hidden lg:block">
+              <DeliveryMap lat={lat} lng={lng} onChange={handleMapChange} />
+            </div>
+            <div className="lg:hidden">
+              {mobileMapOpen ? (
+                <>
+                  <DeliveryMap lat={lat} lng={lng} onChange={handleMapChange} />
+                  <button
+                    type="button"
+                    className="mt-2 text-xs text-zinc-500 underline decoration-zinc-600 underline-offset-2"
+                    onClick={() => setMobileMapOpen(false)}
+                  >
+                    Ocultar mapa
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-neon-outline w-full py-3 text-sm touch-manipulation"
+                  onClick={() => setMobileMapOpen(true)}
+                >
+                  Abrir mapa de entrega (opcional)
+                </button>
+              )}
+            </div>
             <p className="mt-2 text-xs text-zinc-500">
               Coordenadas: {lat.toFixed(5)}, {lng.toFixed(5)} ·{" "}
               <a href={buildMapUrl(lat, lng)} target="_blank" rel="noreferrer" className="text-neon-cyan">
@@ -439,91 +468,17 @@ export function CheckoutForm() {
           )}
         </div>
 
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-lg font-semibold text-white">Método de pago</h2>
-            <p className="mt-1 text-xs text-zinc-500">Elige cómo deseas pagar</p>
-          </div>
-
-          <div className="space-y-2" role="radiogroup" aria-label="Método de pago">
-            {PAYMENT_OPTIONS.map((opt) => {
-              const selected = payment === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  disabled={!opt.enabled}
-                  onClick={() => setPayment(opt.id)}
-                  className={`flex w-full min-h-[52px] touch-manipulation items-center justify-between rounded-xl border px-4 py-3 text-left transition active:scale-[0.99] ${
-                    selected
-                      ? "border-neon-cyan/40 bg-neon-cyan/5"
-                      : "border-white/10 bg-white/[0.02]"
-                  } ${!opt.enabled ? "cursor-not-allowed opacity-40" : ""}`}
-                >
-                  <span className="flex items-center gap-3">
-                    <span
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
-                        selected ? "border-neon-cyan bg-neon-cyan" : "border-zinc-500"
-                      }`}
-                      aria-hidden
-                    >
-                      {selected && <span className="h-2 w-2 rounded-full bg-surface" />}
-                    </span>
-                    <span className="text-sm text-zinc-200">{PAYMENT_LABELS[opt.id]}</span>
-                  </span>
-                  {opt.hint && <span className="text-xs text-zinc-500">{opt.hint}</span>}
-                </button>
-              );
-            })}
-          </div>
-
-          {payment === "transferencia" && (
-            <div className="rounded-xl border border-neon-magenta/25 bg-neon-magenta/5 p-5 text-sm">
-              <p className="font-semibold text-white">Datos para transferencia</p>
-              <ul className="mt-3 space-y-1 text-zinc-300">
-                <li>Cliente: {BANK_DETAILS.client}</li>
-                <li>Número de cuenta BAC: {BANK_DETAILS.accountNumber}</li>
-                <li>Tipo de cuenta: {BANK_DETAILS.accountType}</li>
-                <li>Banco: {BANK_DETAILS.bank}</li>
-              </ul>
-              <p className="mt-3 text-xs text-zinc-500">
-                Después de confirmar verás el botón para enviar el comprobante por WhatsApp.
-              </p>
-            </div>
-          )}
-
-          <div className="rounded-xl border border-glass glass-surface-elevated p-5">
-            <p className="text-sm text-zinc-400">Resumen</p>
-            <ul className="mt-3 space-y-2 text-sm text-zinc-300">
-              {items.map((i) => (
-                <li key={i.id} className="flex justify-between gap-2">
-                  <span className="truncate">{i.name} x{i.quantity}</span>
-                  <span>${(i.price * i.quantity).toFixed(2)}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-4 flex justify-between border-t border-white/10 pt-4">
-              <span className="font-medium text-white">Total</span>
-              <span className="text-xl font-bold text-neon-cyan">${total.toFixed(2)}</span>
-            </div>
-          </div>
-
-          {error && <p className="text-sm text-red-400">{error}</p>}
-
-          <button
-            type="button"
-            className="btn-neon w-full py-3 text-sm"
-            disabled={submitting || (!isLoggedIn && checkoutMode === "account")}
-            onClick={handleConfirm}
-          >
-            {submitting ? "Procesando pedido…" : "Confirmar pedido"}
-          </button>
-
-          {!isLoggedIn && checkoutMode === "account" && (
-            <p className="text-center text-xs text-zinc-500">Inicia sesión arriba para continuar</p>
-          )}
+        <div className="order-1 lg:order-2">
+          <CheckoutPaymentPanel
+            items={items}
+            total={total}
+            initialPayment={preferredPayment}
+            error={error}
+            submitting={submitting}
+            confirmDisabled={!isLoggedIn && checkoutMode === "account"}
+            onConfirm={handleConfirm}
+            accountGateHint={!isLoggedIn && checkoutMode === "account"}
+          />
         </div>
       </div>
     </div>
