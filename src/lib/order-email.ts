@@ -7,6 +7,8 @@ type OrderEmailItem = {
   unitPrice: number;
 };
 
+type Sender = { name: string; email: string };
+
 function siteUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
   if (explicit) return explicit;
@@ -21,6 +23,30 @@ function escapeHtml(text: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function parseSenderFromString(raw: string): Sender | null {
+  const match = raw.match(/^(.+?)\s*<([^>]+)>$/);
+  if (match) return { name: match[1].trim(), email: match[2].trim() };
+  if (raw.includes("@")) return { name: "Edmacars Store", email: raw.trim() };
+  return null;
+}
+
+function resolveSender(): Sender | null {
+  const fromEnv =
+    process.env.EMAIL_FROM_ADDRESS?.trim() ||
+    process.env.BREVO_FROM_EMAIL?.trim() ||
+    process.env.RESEND_FROM_EMAIL?.trim();
+
+  if (!fromEnv) return null;
+
+  const parsed = parseSenderFromString(fromEnv);
+  if (parsed) return parsed;
+
+  return {
+    name: process.env.EMAIL_FROM_NAME?.trim() || "Edmacars Store",
+    email: fromEnv,
+  };
 }
 
 export function buildOrderConfirmationHtml(
@@ -129,6 +155,68 @@ export function buildOrderConfirmationHtml(
 </html>`;
 }
 
+async function sendViaBrevo(
+  sender: Sender,
+  to: string,
+  toName: string,
+  subject: string,
+  html: string
+): Promise<boolean> {
+  const apiKey = process.env.BREVO_API_KEY?.trim();
+  if (!apiKey) return false;
+
+  const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "api-key": apiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      sender,
+      to: [{ email: to, name: toName }],
+      subject,
+      htmlContent: html,
+    }),
+    signal: AbortSignal.timeout(15000),
+  });
+
+  if (!res.ok) {
+    console.error("[order-email] brevo failed", await res.text());
+    return false;
+  }
+
+  return true;
+}
+
+async function sendViaResend(
+  sender: Sender,
+  to: string,
+  subject: string,
+  html: string
+): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) return false;
+
+  const from = `${sender.name} <${sender.email}>`;
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ from, to: [to], subject, html }),
+    signal: AbortSignal.timeout(15000),
+  });
+
+  if (!res.ok) {
+    console.error("[order-email] resend failed", await res.text());
+    return false;
+  }
+
+  return true;
+}
+
 export async function sendOrderConfirmationEmail(
   orderNumber: string,
   payment: PaymentMethod,
@@ -136,36 +224,30 @@ export async function sendOrderConfirmationEmail(
   items: OrderEmailItem[],
   total: number
 ): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  if (!apiKey) return false;
+  const sender = resolveSender();
+  if (!sender) {
+    console.error("[order-email] missing EMAIL_FROM_ADDRESS or BREVO_FROM_EMAIL");
+    return false;
+  }
 
-  const from =
-    process.env.RESEND_FROM_EMAIL?.trim() || "Edmacars Store <onboarding@resend.dev>";
-
+  const subject = `Pedido confirmado ${orderNumber} — Edmacars Store`;
   const html = buildOrderConfirmationHtml(orderNumber, payment, customer, items, total);
+  const to = customer.email.trim();
+
+  const provider = process.env.EMAIL_PROVIDER?.trim().toLowerCase() || "auto";
 
   try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: [customer.email.trim()],
-        subject: `Pedido confirmado ${orderNumber} — Edmacars Store`,
-        html,
-      }),
-      signal: AbortSignal.timeout(15000),
-    });
-
-    if (!res.ok) {
-      console.error("[order-email] resend failed", await res.text());
-      return false;
+    if (provider === "brevo" || (provider === "auto" && process.env.BREVO_API_KEY)) {
+      const ok = await sendViaBrevo(sender, to, customer.fullName, subject, html);
+      if (ok) return true;
+      if (provider === "brevo") return false;
     }
 
-    return true;
+    if (provider === "resend" || provider === "auto") {
+      return sendViaResend(sender, to, subject, html);
+    }
+
+    return false;
   } catch (err) {
     console.error("[order-email] send failed", err);
     return false;
