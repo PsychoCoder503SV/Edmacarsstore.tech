@@ -5,6 +5,7 @@ import {
   type PaymentMethod,
 } from "@/lib/checkout";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
+import { sendOrderConfirmationEmail } from "@/lib/order-email";
 import { notifyStoreTelegram } from "@/lib/telegram-server";
 import { NextResponse } from "next/server";
 
@@ -110,7 +111,16 @@ export async function POST(request: Request) {
       total
     );
 
-    await notifyStoreTelegram(message);
+    await Promise.allSettled([
+      notifyStoreTelegram(message),
+      sendOrderConfirmationEmail(
+        orderNumber,
+        paymentMethod,
+        customer,
+        items.map((i) => ({ name: i.name, quantity: i.quantity, unitPrice: i.unitPrice })),
+        total
+      ),
+    ]);
 
     return NextResponse.json({ ok: true, orderId: order.id, orderNumber });
   } catch (err) {

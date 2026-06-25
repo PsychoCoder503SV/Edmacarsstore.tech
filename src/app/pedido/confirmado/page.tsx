@@ -53,6 +53,9 @@ function ConfirmadoContent() {
         <p className="mt-2 text-sm text-zinc-400">
           Tu orden <span className="font-mono text-neon-cyan">{data.orderNumber}</span> fue registrada
         </p>
+        <p className="mt-2 text-xs text-zinc-500">
+          Enviamos la confirmación a <span className="text-zinc-300">{data.customer.email}</span>
+        </p>
       </div>
 
       {data.accountSuccess && (
