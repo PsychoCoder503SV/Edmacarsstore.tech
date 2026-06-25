@@ -86,9 +86,9 @@ export function SupportChat() {
           <Image
             src="/icon.png"
             alt=""
-            width={40}
-            height={40}
-            className="support-car-walk relative z-10 h-10 w-10 object-contain"
+            width={56}
+            height={56}
+            className="support-car-walk relative z-10 h-14 w-14 object-contain"
           />
         </button>
       )}
