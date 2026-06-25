@@ -1,7 +1,8 @@
+import { ProductImage } from "@/components/ProductImage";
 import type { Product } from "@/lib/database.types";
+import { productCover, productImages } from "@/lib/images";
 import { categoryIcon, productGradient } from "@/lib/store";
 import Link from "next/link";
-import Image from "next/image";
 
 type ProductCardProps = {
   product: Product;
@@ -11,17 +12,21 @@ export function ProductCard({ product }: ProductCardProps) {
   const categoryName = product.categories?.name ?? "Producto";
   const categorySlug = product.categories?.slug ?? "";
   const gradient = productGradient(categorySlug);
+  const cover = productCover(product);
+  const imageCount = productImages(product).length;
 
   return (
-    <article className={`group card-hover-cyan relative flex flex-col overflow-hidden rounded-2xl border border-glass glass-surface-elevated transition duration-300 hover:-translate-y-1 hover:border-neon-cyan/30 ${product.stock <= 0 ? "opacity-75" : ""}`}>
-      <Link href={`/producto/${product.slug}`} className="block">
+    <article
+      className={`group card-hover-cyan relative flex flex-col overflow-hidden rounded-2xl border border-glass glass-surface-elevated transition duration-300 hover:-translate-y-1 hover:border-neon-cyan/30 ${product.stock <= 0 ? "opacity-75" : ""}`}
+    >
+      <Link href={`/catalogo?categoria=${categorySlug}`} className="block">
         <div
           className={`relative aspect-[4/3] bg-gradient-to-br ${gradient} flex items-center justify-center overflow-hidden`}
         >
           <div className="product-overlay absolute inset-0" />
-          {product.image_url ? (
-            <Image
-              src={product.image_url}
+          {cover ? (
+            <ProductImage
+              src={cover}
               alt={product.name}
               fill
               className="object-cover transition group-hover:scale-105"
@@ -30,6 +35,11 @@ export function ProductCard({ product }: ProductCardProps) {
           ) : (
             <span className="text-5xl opacity-60 transition group-hover:scale-110 group-hover:opacity-90">
               {categoryIcon(categorySlug)}
+            </span>
+          )}
+          {imageCount > 1 && (
+            <span className="absolute bottom-3 right-3 rounded-full border border-white/20 bg-black/50 px-2 py-0.5 text-[10px] font-semibold text-white">
+              +{imageCount - 1} fotos
             </span>
           )}
           {product.stock <= 0 ? (
@@ -46,7 +56,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
       <div className="flex flex-1 flex-col p-4">
         <p className="text-[10px] uppercase tracking-widest text-zinc-500">{categoryName}</p>
-        <Link href={`/producto/${product.slug}`}>
+        <Link href={`/catalogo?categoria=${categorySlug}`}>
           <h3 className="mt-1 line-clamp-2 text-sm font-medium text-zinc-100 transition group-hover:text-neon-cyan">
             {product.name}
           </h3>

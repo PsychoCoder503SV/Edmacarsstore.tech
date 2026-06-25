@@ -1,5 +1,6 @@
 import { createSupabaseClient } from "@/lib/supabase";
 import type { Category, Product } from "@/lib/database.types";
+import { productImages } from "@/lib/images";
 
 export async function getCategories(): Promise<Category[]> {
   const supabase = createSupabaseClient();
@@ -51,6 +52,39 @@ export async function getProducts(options?: {
     return [];
   }
   return (data ?? []) as Product[];
+}
+
+export async function getCategoryBySlug(slug: string): Promise<Category | null> {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id, name, slug, description")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data;
+}
+
+export type CategoryWithProducts = Category & { products: Product[] };
+
+export async function getProductsByCategory(): Promise<CategoryWithProducts[]> {
+  const [categories, products] = await Promise.all([getCategories(), getProducts()]);
+  return categories
+    .map((category) => ({
+      ...category,
+      products: products.filter((p) => p.categories?.slug === category.slug),
+    }))
+    .filter((c) => c.products.length > 0);
+}
+
+export function getCategoryGalleryImages(products: Product[]): { url: string; productName: string; productSlug: string }[] {
+  const items: { url: string; productName: string; productSlug: string }[] = [];
+  for (const product of products) {
+    for (const url of productImages(product)) {
+      items.push({ url, productName: product.name, productSlug: product.slug });
+    }
+  }
+  return items;
 }
 
 export function categoryIcon(slug: string): string {

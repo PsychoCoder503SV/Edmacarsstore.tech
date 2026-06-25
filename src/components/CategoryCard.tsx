@@ -10,7 +10,7 @@ type CategoryCardProps = {
 export function CategoryCard({ category, productCount }: CategoryCardProps) {
   return (
     <Link
-      href={`/catalogo?categoria=${category.slug}`}
+      href={`/categoria/${category.slug}`}
       className="group category-hover-magenta flex flex-col items-center rounded-2xl border border-glass glass-surface p-6 text-center transition hover:border-neon-magenta/40 hover:bg-neon-magenta/5"
     >
       <span className="text-3xl transition duration-300 group-hover:scale-110">
@@ -20,7 +20,7 @@ export function CategoryCard({ category, productCount }: CategoryCardProps) {
         {category.name}
       </h3>
       {productCount !== undefined && (
-        <p className="mt-1 text-xs text-zinc-600">{productCount} productos</p>
+        <p className="mt-1 text-xs text-zinc-600">{productCount} productos · ver galería</p>
       )}
     </Link>
   );
