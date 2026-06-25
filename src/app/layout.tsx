@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, Outfit } from "next/font/google";
+import { AuthProvider } from "@/lib/auth";
 import { CartProvider } from "@/components/CartProvider";
 import { ChatbotFab } from "@/components/ChatbotFab";
 import { Footer } from "@/components/Footer";
@@ -32,12 +33,14 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${outfit.variable} ${bebas.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        <CartProvider>
-          <Header />
-          <div className="flex flex-1 flex-col">{children}</div>
-          <Footer />
-          <ChatbotFab />
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <Header />
+            <div className="flex flex-1 flex-col">{children}</div>
+            <Footer />
+            <ChatbotFab />
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

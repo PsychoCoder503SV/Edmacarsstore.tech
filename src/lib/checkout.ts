@@ -26,6 +26,35 @@ export type CheckoutCustomer = {
   lng: number;
 };
 
+export type OrderConfirmationData = {
+  orderNumber: string;
+  paymentMethod: PaymentMethod;
+  customer: CheckoutCustomer;
+  items: { name: string; quantity: number; unitPrice: number }[];
+  total: number;
+  createdAt: string;
+};
+
+export const ORDER_CONFIRM_STORAGE_KEY = "edmacars_order_confirm";
+
+export function saveOrderConfirmation(data: OrderConfirmationData): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(ORDER_CONFIRM_STORAGE_KEY, JSON.stringify(data));
+}
+
+export function loadOrderConfirmation(orderNumber?: string | null): OrderConfirmationData | null {
+  if (typeof window === "undefined") return null;
+  const raw = sessionStorage.getItem(ORDER_CONFIRM_STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    const data = JSON.parse(raw) as OrderConfirmationData;
+    if (orderNumber && data.orderNumber !== orderNumber) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 export function generateOrderNumber(): string {
   const d = new Date();
   const date = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
@@ -37,38 +66,62 @@ export function buildMapUrl(lat: number, lng: number): string {
   return `https://www.google.com/maps?q=${lat},${lng}&z=17`;
 }
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+export function formatTelegramOrderMessage(
+  orderNumber: string,
+  payment: PaymentMethod,
+  customer: CheckoutCustomer,
+  items: CartItem[],
+  total: number
+): string {
+  const lines = items.map(
+    (i) =>
+      `  • ${escapeHtml(i.name)} ×${i.quantity} — <b>$${(i.price * i.quantity).toFixed(2)}</b>`
+  );
+  const now = new Date().toLocaleString("es-SV", { dateStyle: "medium", timeStyle: "short" });
+
+  return [
+    `<b>🛒 NUEVO PEDIDO — EDMACARS</b>`,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    `<b>Orden:</b> <code>${escapeHtml(orderNumber)}</code>`,
+    `<b>Fecha:</b> ${escapeHtml(now)}`,
+    `<b>Pago:</b> ${escapeHtml(PAYMENT_LABELS[payment])}`,
+    `<b>Total:</b> $${total.toFixed(2)}`,
+    ``,
+    `<b>👤 Cliente</b>`,
+    escapeHtml(customer.fullName),
+    `📱 ${escapeHtml(customer.phone)}`,
+    `📧 ${escapeHtml(customer.email)}`,
+    ``,
+    `<b>📍 Entrega</b>`,
+    escapeHtml(customer.address),
+    customer.notes ? `📝 ${escapeHtml(customer.notes)}` : "",
+    `🗺 <a href="${buildMapUrl(customer.lat, customer.lng)}">Ver ubicación en mapa</a>`,
+    ``,
+    `<b>🛍 Productos (${items.length})</b>`,
+    ...lines,
+    ``,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    `<i>Notificación automática — Edmacars Store</i>`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 export function formatOrderMessage(
   orderNumber: string,
   payment: PaymentMethod,
   customer: CheckoutCustomer,
   items: CartItem[],
-  total: number,
-  options?: { transferProof?: boolean }
+  total: number
 ): string {
-  const lines = items.map((i) => `• ${i.name} x${i.quantity} — $${(i.price * i.quantity).toFixed(2)}`);
-  const proof = options?.transferProof ? "\n\n📎 Envío comprobante de transferencia bancaria." : "";
-
-  return [
-    `🛒 *PEDIDO EDMACARS*`,
-    `Orden: *${orderNumber}*`,
-    `Pago: ${PAYMENT_LABELS[payment]}`,
-    `Total: *$${total.toFixed(2)}*`,
-    ``,
-    `👤 ${customer.fullName}`,
-    `📱 ${customer.phone}`,
-    `📧 ${customer.email}`,
-    ``,
-    `📍 *Dirección de entrega:*`,
-    customer.address,
-    customer.notes ? `Notas: ${customer.notes}` : "",
-    `🗺 ${buildMapUrl(customer.lat, customer.lng)}`,
-    ``,
-    `🛍 *Productos:*`,
-    ...lines,
-    proof,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  return formatTelegramOrderMessage(orderNumber, payment, customer, items, total);
 }
 
 export function buildShippingRecord(

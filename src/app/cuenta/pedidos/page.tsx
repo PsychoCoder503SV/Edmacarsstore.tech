@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseClient } from "@/lib/supabase";
+import { PAYMENT_LABELS, type PaymentMethod } from "@/lib/checkout";
 
 type OrderRow = {
   id: string;
@@ -12,100 +12,82 @@ type OrderRow = {
   shipping_address: string | null;
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Pendiente",
+  processing: "En proceso",
+  shipped: "Enviado",
+  delivered: "Entregado",
+  cancelled: "Cancelado",
+};
+
 export default function MisPedidosPage() {
+  const supabase = createSupabaseClient();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loggedIn, setLoggedIn] = useState(false);
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  async function loadOrders() {
-    const { data: session } = await supabase.auth.getSession();
-    if (!session.session) {
-      setLoggedIn(false);
-      setLoading(false);
-      return;
-    }
-    setLoggedIn(true);
-    const { data } = await supabase
-      .from("orders")
-      .select("id, created_at, status, total_amount, shipping_address")
-      .order("created_at", { ascending: false });
-    setOrders((data as OrderRow[]) ?? []);
-    setLoading(false);
-  }
 
   useEffect(() => {
-    loadOrders();
-  }, []);
-
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      alert(error.message);
-      return;
+    async function load() {
+      const { data } = await supabase
+        .from("orders")
+        .select("id, created_at, status, total_amount, shipping_address")
+        .order("created_at", { ascending: false });
+      setOrders((data as OrderRow[]) ?? []);
+      setLoading(false);
     }
-    setLoading(true);
-    await loadOrders();
-  }
+    load();
+  }, [supabase]);
 
-  function parseOrderNumber(addr: string | null): string {
-    if (!addr) return "—";
+  function parseShipping(addr: string | null) {
+    if (!addr) return { orderNumber: "—", payment: "" };
     try {
       const j = JSON.parse(addr);
-      return j.order_number ?? "—";
+      const payment = j.payment_method as PaymentMethod | undefined;
+      return {
+        orderNumber: j.order_number ?? "—",
+        payment: payment && PAYMENT_LABELS[payment] ? PAYMENT_LABELS[payment] : "",
+        address: j.address ?? "",
+      };
     } catch {
-      return "—";
+      return { orderNumber: "—", payment: "", address: "" };
     }
   }
 
   return (
-    <main className="flex-1">
-      <section className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <h1 className="font-brand text-3xl text-white">
-          MIS <span className="text-neon-cyan">PEDIDOS</span>
-        </h1>
-
-        {!loggedIn ? (
-          <form onSubmit={handleLogin} className="mt-8 space-y-4 rounded-2xl border border-glass glass-surface p-6">
-            <p className="text-sm text-zinc-400">Inicia sesión para ver tu historial y estado de pedidos</p>
-            <input className="checkout-input" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <input className="checkout-input" type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} />
-            <button type="submit" className="btn-neon w-full py-2.5 text-sm">Ingresar</button>
-          </form>
-        ) : loading ? (
-          <p className="mt-8 text-sm text-zinc-500">Cargando...</p>
-        ) : orders.length === 0 ? (
-          <p className="mt-8 text-sm text-zinc-500">Aún no tienes pedidos registrados con esta cuenta.</p>
-        ) : (
-          <ul className="mt-8 space-y-4">
-            {orders.map((o) => (
+    <div>
+      <h2 className="text-lg font-semibold text-white">Historial de pedidos</h2>
+      {loading ? (
+        <p className="mt-6 text-sm text-zinc-500">Cargando…</p>
+      ) : orders.length === 0 ? (
+        <p className="mt-6 text-sm text-zinc-500">Aún no tienes pedidos con esta cuenta.</p>
+      ) : (
+        <ul className="mt-6 space-y-4">
+          {orders.map((o) => {
+            const meta = parseShipping(o.shipping_address);
+            return (
               <li key={o.id} className="rounded-xl border border-glass glass-surface p-4">
                 <div className="flex justify-between gap-4">
                   <div>
-                    <p className="font-medium text-white">{parseOrderNumber(o.shipping_address)}</p>
-                    <p className="mt-1 text-xs text-zinc-500">{new Date(o.created_at).toLocaleString("es-SV")}</p>
+                    <p className="font-medium text-white">{meta.orderNumber}</p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {new Date(o.created_at).toLocaleString("es-SV")}
+                    </p>
+                    {meta.payment && <p className="mt-1 text-xs text-zinc-400">{meta.payment}</p>}
+                    {meta.address && (
+                      <p className="mt-2 text-xs text-zinc-500 line-clamp-2">{meta.address}</p>
+                    )}
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-neon-cyan">${Number(o.total_amount).toFixed(2)}</p>
-                    <p className="mt-1 text-xs capitalize text-zinc-400">{o.status}</p>
+                    <p className="mt-1 text-xs text-zinc-400">
+                      {STATUS_LABELS[o.status] ?? o.status}
+                    </p>
                   </div>
                 </div>
               </li>
-            ))}
-          </ul>
-        )}
-
-        <Link href="/" className="mt-8 inline-block text-sm text-neon-cyan hover:text-white">
-          ← Volver al inicio
-        </Link>
-      </section>
-    </main>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
