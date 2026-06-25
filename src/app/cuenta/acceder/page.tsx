@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { registerAndSignIn, signInCustomer } from "@/lib/auth-client";
 import { createSupabaseClient } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { getPasswordRules, validateCheckoutFields } from "@/lib/validation";
@@ -19,6 +20,7 @@ export default function AccederPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -28,42 +30,45 @@ export default function AccederPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setSubmitting(true);
 
     try {
       if (mode === "login") {
-        const { error: signErr } = await supabase.auth.signInWithPassword({ email, password });
-        if (signErr) throw signErr;
-      } else {
-        const rules = validateCheckoutFields({
-          fullName,
-          phone: "71234567",
-          email,
-          address: "x",
-          password,
-          createAccount: true,
-        });
-        if (rules.password || rules.fullName || rules.email) {
-          throw new Error("Revisa nombre, email y contraseña");
-        }
-        const { error: signErr } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { full_name: fullName.trim() } },
-        });
-        if (signErr) throw signErr;
+        const { ok, message } = await signInCustomer(supabase, email, password);
+        if (!ok) throw new Error(message ?? "No se pudo iniciar sesión");
+        await refresh();
+        router.replace("/cuenta");
+        return;
       }
+
+      const rules = validateCheckoutFields({
+        fullName,
+        phone: "71234567",
+        email,
+        address: "x",
+        password,
+        createAccount: true,
+      });
+      if (rules.password || rules.fullName || rules.email) {
+        throw new Error("Revisa nombre, email y contraseña");
+      }
+
+      const result = await registerAndSignIn(supabase, {
+        email,
+        password,
+        fullName: fullName.trim(),
+      });
+
+      if (!result.signedIn) {
+        throw new Error(result.message ?? "No se pudo crear la cuenta");
+      }
+
       await refresh();
+      setSuccess(result.message ?? "Cuenta lista. Redirigiendo…");
       router.replace("/cuenta");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Error al acceder";
-      if (/rate limit|too many/i.test(msg)) {
-        setError(
-          "Supabase limitó el envío de correos (muchas pruebas seguidas). Espera ~1 hora o desactiva confirmación por email en el panel de Supabase."
-        );
-      } else {
-        setError(msg);
-      }
+      setError(err instanceof Error ? err.message : "Error al acceder");
       setSubmitting(false);
     }
   }
@@ -140,6 +145,7 @@ export default function AccederPage() {
               ))}
             </ul>
           )}
+          {success && <p className="text-sm text-neon-cyan">{success}</p>}
           {error && <p className="text-sm text-red-400">{error}</p>}
           <button type="submit" className="btn-neon w-full py-2.5 text-sm" disabled={submitting}>
             {submitting ? "Procesando…" : mode === "login" ? "Ingresar" : "Crear cuenta"}

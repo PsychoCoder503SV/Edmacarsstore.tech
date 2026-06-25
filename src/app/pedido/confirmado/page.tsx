@@ -55,6 +55,12 @@ function ConfirmadoContent() {
         </p>
       </div>
 
+      {data.accountSuccess && (
+        <div className="mt-6 rounded-xl border border-neon-cyan/30 bg-neon-cyan/10 p-4 text-sm text-neon-cyan">
+          {data.accountSuccess} Puedes ver tus pedidos en Mi cuenta.
+        </div>
+      )}
+
       {data.accountWarning && (
         <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
           {data.accountWarning}

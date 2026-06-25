@@ -16,6 +16,7 @@ import {
   type CheckoutCustomer,
   type PaymentMethod,
 } from "@/lib/checkout";
+import { registerAndSignIn, signInCustomer } from "@/lib/auth-client";
 import { createSupabaseClient } from "@/lib/supabase";
 import {
   getPasswordRules,
@@ -136,30 +137,39 @@ export function CheckoutForm() {
     return data;
   }
 
-  async function maybeCreateAccount(): Promise<{ userId: string | null; accountWarning: string | null }> {
-    if (isLoggedIn) return { userId: user.id, accountWarning: null };
-    if (checkoutMode !== "guest" || !createAccount) return { userId: null, accountWarning: null };
-
-    const { data, error: signErr } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: { data: { full_name: fullName.trim(), phone: customer().phone } },
-    });
-
-    if (signErr) {
-      const rateLimited = /rate limit|too many/i.test(signErr.message);
-      if (rateLimited) {
-        return {
-          userId: null,
-          accountWarning:
-            "Tu pedido se registró correctamente. La cuenta no se pudo crear ahora (límite de correos de Supabase). Intenta crear tu cuenta más tarde en Acceder.",
-        };
-      }
-      throw new Error(signErr.message);
+  async function maybeCreateAccount(): Promise<{
+    userId: string | null;
+    accountWarning: string | null;
+    accountSuccess: string | null;
+  }> {
+    if (isLoggedIn) return { userId: user.id, accountWarning: null, accountSuccess: null };
+    if (checkoutMode !== "guest" || !createAccount) {
+      return { userId: null, accountWarning: null, accountSuccess: null };
     }
 
-    await refresh();
-    return { userId: data.user?.id ?? null, accountWarning: null };
+    const result = await registerAndSignIn(supabase, {
+      email: email.trim(),
+      password,
+      fullName: fullName.trim(),
+      phone: customer().phone,
+    });
+
+    if (result.signedIn) {
+      await refresh();
+      return {
+        userId: result.userId,
+        accountWarning: null,
+        accountSuccess: result.message ?? "Cuenta activa — ya iniciaste sesión.",
+      };
+    }
+
+    return {
+      userId: null,
+      accountWarning:
+        result.message ??
+        "Tu pedido se guardará como invitado. Puedes crear tu cuenta después en Acceder.",
+      accountSuccess: null,
+    };
   }
 
   async function handleQuickLogin() {
@@ -169,12 +179,9 @@ export function CheckoutForm() {
       return;
     }
     setSubmitting(true);
-    const { error: signErr } = await supabase.auth.signInWithPassword({
-      email: loginEmail,
-      password: loginPassword,
-    });
-    if (signErr) {
-      setError(signErr.message);
+    const { ok, message } = await signInCustomer(supabase, loginEmail, loginPassword);
+    if (!ok) {
+      setError(message ?? "No se pudo iniciar sesión");
       setSubmitting(false);
       return;
     }
@@ -202,7 +209,7 @@ export function CheckoutForm() {
 
     try {
       const num = generateOrderNumber();
-      const { userId, accountWarning } = await maybeCreateAccount();
+      const { userId, accountWarning, accountSuccess } = await maybeCreateAccount();
       await saveOrder(num, userId);
 
       saveOrderConfirmation({
@@ -217,6 +224,7 @@ export function CheckoutForm() {
         total,
         createdAt: new Date().toISOString(),
         accountWarning: accountWarning ?? undefined,
+        accountSuccess: accountSuccess ?? undefined,
       });
 
       clearCart();

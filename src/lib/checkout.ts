@@ -34,6 +34,7 @@ export type OrderConfirmationData = {
   total: number;
   createdAt: string;
   accountWarning?: string;
+  accountSuccess?: string;
 };
 
 export const ORDER_CONFIRM_STORAGE_KEY = "edmacars_order_confirm";
