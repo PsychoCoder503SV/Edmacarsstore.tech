@@ -63,7 +63,6 @@ export default async function CategoriaGalleryPage({ params }: PageProps) {
                   alt={item.productName}
                   fill
                   className="object-cover transition duration-300 group-hover:scale-105"
-                  sizes="(max-width: 768px) 50vw, 25vw"
                 />
                 <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2 text-[11px] text-zinc-200">
                   {item.productName}

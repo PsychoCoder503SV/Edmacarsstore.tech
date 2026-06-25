@@ -156,3 +156,34 @@ body {
 .category-hover-magenta:hover {
   box-shadow: 0 0 24px rgb(255 0 128 / 0.06);
 }
+
+.cart-fly-dot {
+  position: fixed;
+  z-index: 9999;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+  box-shadow: 0 0 16px rgb(0 245 255 / 0.6);
+  pointer-events: none;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.55s ease;
+  transform: translate(0, 0) scale(1);
+}
+
+.cart-bump {
+  animation: cart-bump 0.45s ease;
+}
+
+@keyframes cart-bump {
+  0%, 100% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+}
+
+.cart-btn-pulse {
+  animation: cart-btn-pulse 0.35s ease;
+}
+
+@keyframes cart-btn-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.94); box-shadow: 0 0 18px rgb(0 245 255 / 0.35); }
+}

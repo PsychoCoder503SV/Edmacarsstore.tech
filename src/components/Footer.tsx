@@ -7,7 +7,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-10 md:grid-cols-3">
           <div>
-            <BrandLogo size="sm" />
+            <BrandLogo size="sm" showName />
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-zinc-500">
               Tecnología de primera mano y accesorios. Envíos en El Salvador con atención personalizada.
             </p>
@@ -52,11 +52,8 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 text-xs text-zinc-600 sm:flex-row">
+        <div className="mt-10 border-t border-white/5 pt-8 text-center text-xs text-zinc-600 sm:text-left">
           <p>© {new Date().getFullYear()} Edmacars Import and Sales, S.A. de C.V.</p>
-          <p className="rounded-full border border-neon-cyan/20 bg-neon-cyan/5 px-3 py-1 text-neon-cyan/80">
-            Modo local · sin producción
-          </p>
         </div>
       </div>
     </footer>

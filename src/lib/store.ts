@@ -54,6 +54,19 @@ export async function getProducts(options?: {
   return (data ?? []) as Product[];
 }
 
+export async function getProductBySlug(slug: string): Promise<Product | null> {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, name, slug, description, price, image_url, stock, category_id, is_active, categories(name, slug)")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return data as Product;
+}
+
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
   const supabase = createSupabaseClient();
   const { data, error } = await supabase

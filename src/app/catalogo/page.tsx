@@ -1,7 +1,5 @@
-import { BrandLogo } from "@/components/BrandLogo";
 import { ProductCard } from "@/components/ProductCard";
 import { getCategories, getProducts } from "@/lib/store";
-import Image from "next/image";
 import Link from "next/link";
 
 type PageProps = {
@@ -21,23 +19,20 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
 
   return (
     <main className="flex-1">
-      <section className="relative overflow-hidden border-b border-white/5">
-        <Image src="/fondoweb.webp" alt="" fill className="object-cover opacity-30" sizes="100vw" />
-        <div className="hero-edmacars-overlay absolute inset-0" />
-        <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <p className="text-xs font-semibold uppercase tracking-widest text-neon-cyan">Catálogo</p>
-          <div className="mt-3">
-            <BrandLogo size="lg" />
-          </div>
-          <p className="mt-3 max-w-xl text-sm text-zinc-500">
-            {activeCategory
-              ? `Productos en ${activeCategory.name}`
-              : "Todos los productos disponibles — datos en vivo desde Supabase"}
-          </p>
-        </div>
-      </section>
-
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          {activeCategory ? (
+            <>
+              <Link href="/" className="text-xs text-neon-cyan hover:text-white">
+                ← Inicio
+              </Link>
+              <h1 className="mt-3 text-2xl font-semibold text-white sm:text-3xl">{activeCategory.name}</h1>
+            </>
+          ) : (
+            <h1 className="text-2xl font-semibold text-white sm:text-3xl">Catálogo completo</h1>
+          )}
+        </div>
+
         <div className="flex flex-wrap gap-2">
           <Link
             href="/catalogo"
@@ -66,10 +61,10 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
 
         {products.length === 0 ? (
           <div className="mt-16 rounded-2xl border border-glass glass-surface p-12 text-center">
-            <p className="text-lg font-medium text-zinc-300">No hay productos todavía</p>
-            <p className="mt-2 text-sm text-zinc-500">
-              Agrega productos desde Supabase Table Editor o la APK admin (próximamente).
-            </p>
+            <p className="text-lg font-medium text-zinc-300">No hay productos en esta categoría</p>
+            <Link href="/catalogo" className="btn-neon-outline mt-4 inline-block px-5 py-2 text-sm">
+              Ver todo el catálogo
+            </Link>
           </div>
         ) : (
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
