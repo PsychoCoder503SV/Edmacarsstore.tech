@@ -21,6 +21,7 @@ async function sendViaInternalBridge(message: string): Promise<boolean> {
       "x-bridge-secret": secret,
     },
     body: JSON.stringify({ message }),
+    signal: AbortSignal.timeout(15000),
   });
 
   return res.ok;

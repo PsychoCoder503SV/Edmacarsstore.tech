@@ -5,7 +5,7 @@ import {
   type PaymentMethod,
 } from "@/lib/checkout";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
-import { notifyStoreOrder } from "@/lib/whatsapp-server";
+import { notifyStoreTelegram } from "@/lib/telegram-server";
 import { NextResponse } from "next/server";
 
 type OrderItemPayload = {
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
       total
     );
 
-    await notifyStoreOrder(message);
+    await notifyStoreTelegram(message);
 
     return NextResponse.json({ ok: true, orderId: order.id, orderNumber });
   } catch (err) {
