@@ -71,11 +71,6 @@ export function formatOrderMessage(
     .join("\n");
 }
 
-export function getWhatsAppUrl(message: string): string {
-  const phone = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "50300000000").replace(/\D/g, "");
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-}
-
 export function buildShippingRecord(
   orderNumber: string,
   payment: PaymentMethod,

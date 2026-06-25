@@ -298,14 +298,22 @@ body {
   filter: invert(1) brightness(0.85);
 }
 
-.delivery-map-marker {
-  width: 28px;
-  height: 28px;
-  border-radius: 50% 50% 50% 0;
-  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
-  transform: rotate(-45deg);
-  border: 2px solid white;
-  box-shadow: 0 0 18px rgb(0 245 255 / 0.55);
+.delivery-map-canvas .maplibregl-ctrl-attrib,
+.delivery-map-canvas .maplibregl-compact {
+  display: none !important;
+}
+
+.delivery-map-car-marker {
+  width: 44px;
+  height: 44px;
+  filter: drop-shadow(0 0 12px rgb(0 245 255 / 0.65));
+}
+
+.delivery-map-car-marker img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
 }
 
 .delivery-map-gps-btn {

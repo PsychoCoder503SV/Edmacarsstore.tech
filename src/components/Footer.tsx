@@ -47,7 +47,7 @@ export function Footer() {
                   info@edmacars.com
                 </a>
               </li>
-              <li className="text-xs text-zinc-600">WhatsApp al confirmar pedido</li>
+              <li className="text-xs text-zinc-600">Atención personalizada</li>
             </ul>
           </div>
         </div>

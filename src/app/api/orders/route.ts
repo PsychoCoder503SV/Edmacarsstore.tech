@@ -1,12 +1,25 @@
-import { buildShippingRecord, type CheckoutCustomer, type PaymentMethod } from "@/lib/checkout";
+import {
+  buildShippingRecord,
+  formatOrderMessage,
+  type CheckoutCustomer,
+  type PaymentMethod,
+} from "@/lib/checkout";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
+import { notifyStoreOrder } from "@/lib/whatsapp-server";
 import { NextResponse } from "next/server";
+
+type OrderItemPayload = {
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+  name: string;
+};
 
 type OrderPayload = {
   orderNumber: string;
   paymentMethod: PaymentMethod;
   customer: CheckoutCustomer;
-  items: { productId: string; quantity: number; unitPrice: number }[];
+  items: OrderItemPayload[];
   total: number;
   userId?: string | null;
 };
@@ -50,7 +63,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: itemsError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, orderId: order.id });
+    const message = formatOrderMessage(
+      orderNumber,
+      paymentMethod,
+      customer,
+      items.map((i) => ({
+        id: i.productId,
+        slug: i.productId,
+        name: i.name,
+        price: i.unitPrice,
+        quantity: i.quantity,
+        image: null,
+        stock: 0,
+      })),
+      total
+    );
+
+    await notifyStoreOrder(message);
+
+    return NextResponse.json({ ok: true, orderId: order.id, orderNumber });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error interno";
     return NextResponse.json({ error: message }, { status: 500 });

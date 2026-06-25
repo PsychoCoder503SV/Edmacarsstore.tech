@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCart } from "@/components/CartProvider";
 import { cartTotal } from "@/lib/cart";
@@ -8,9 +9,7 @@ import {
   BANK_DETAILS,
   PAYMENT_LABELS,
   buildMapUrl,
-  formatOrderMessage,
   generateOrderNumber,
-  getWhatsAppUrl,
   type CheckoutCustomer,
   type PaymentMethod,
 } from "@/lib/checkout";
@@ -45,6 +44,7 @@ function inputClass(hasError?: string) {
 }
 
 export function CheckoutForm() {
+  const router = useRouter();
   const { items, clearCart } = useCart();
   const total = cartTotal(items);
 
@@ -100,6 +100,7 @@ export function CheckoutForm() {
         userId: userId ?? null,
         items: items.map((i) => ({
           productId: i.id,
+          name: i.name,
           quantity: i.quantity,
           unitPrice: i.price,
         })),
@@ -141,19 +142,13 @@ export function CheckoutForm() {
     }
 
     setSubmitting(true);
-    const orderItems = [...items];
-    const orderCustomer = customer();
-    const orderTotal = total;
 
     try {
       const num = generateOrderNumber();
       const userId = await maybeCreateAccount();
       await saveOrder(num, userId);
-
       clearCart();
-
-      const msg = formatOrderMessage(num, payment, orderCustomer, orderItems, orderTotal);
-      window.location.assign(getWhatsAppUrl(msg));
+      router.replace("/catalogo");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al confirmar");
       setSubmitting(false);
