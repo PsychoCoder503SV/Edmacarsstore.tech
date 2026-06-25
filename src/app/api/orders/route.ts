@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import {
   buildShippingRecord,
   formatOrderMessage,
@@ -65,7 +66,8 @@ export async function POST(request: Request) {
     }
 
     const supabase = createSupabaseAdmin();
-    const shipping_address = buildShippingRecord(orderNumber, paymentMethod, customer);
+    const trackToken = randomBytes(18).toString("base64url");
+    const shipping_address = buildShippingRecord(orderNumber, paymentMethod, customer, trackToken);
     const resolvedUserId = await resolveOrderUserId(supabase, userId, customer, paymentMethod);
 
     const { data: order, error: orderError } = await supabase
@@ -118,11 +120,12 @@ export async function POST(request: Request) {
         paymentMethod,
         customer,
         items.map((i) => ({ name: i.name, quantity: i.quantity, unitPrice: i.unitPrice })),
-        total
+        total,
+        trackToken
       ),
     ]);
 
-    return NextResponse.json({ ok: true, orderId: order.id, orderNumber });
+    return NextResponse.json({ ok: true, orderId: order.id, orderNumber, trackToken });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error interno";
     return NextResponse.json({ error: message }, { status: 500 });

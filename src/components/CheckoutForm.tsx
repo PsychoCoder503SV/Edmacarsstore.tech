@@ -210,10 +210,11 @@ export function CheckoutForm() {
     try {
       const num = generateOrderNumber();
       const { userId, accountWarning, accountSuccess } = await maybeCreateAccount();
-      await saveOrder(num, userId);
+      const orderRes = await saveOrder(num, userId);
 
       saveOrderConfirmation({
         orderNumber: num,
+        trackToken: orderRes.trackToken,
         paymentMethod: payment,
         customer: customer(),
         items: items.map((i) => ({

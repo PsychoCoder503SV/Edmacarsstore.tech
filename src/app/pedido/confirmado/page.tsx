@@ -151,7 +151,11 @@ function ConfirmadoContent() {
           email del pedido para consultar el estado cuando quieras.
         </p>
         <Link
-          href={`/pedido/seguimiento?orden=${encodeURIComponent(data.orderNumber)}`}
+          href={
+            data.trackToken
+              ? `/pedido/seguimiento?orden=${encodeURIComponent(data.orderNumber)}&t=${encodeURIComponent(data.trackToken)}`
+              : `/pedido/seguimiento?orden=${encodeURIComponent(data.orderNumber)}`
+          }
           className="btn-neon-outline mt-3 inline-block px-4 py-2 text-xs"
         >
           Rastrear este pedido

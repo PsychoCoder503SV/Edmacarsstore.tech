@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { PAYMENT_LABELS, type PaymentMethod } from "@/lib/checkout";
 import {
   ORDER_STATUS_LABELS,
@@ -31,37 +31,56 @@ type TrackedOrder = {
 
 function SeguimientoContent() {
   const params = useSearchParams();
+  const tokenFromUrl = params.get("t") ?? "";
   const [orderNumber, setOrderNumber] = useState(params.get("orden") ?? "");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<TrackedOrder | null>(null);
+  const hasSecureLink = Boolean(tokenFromUrl && orderNumber);
+
+  const fetchTrack = useCallback(
+    async (num: string, mail: string, token?: string) => {
+      setError(null);
+      setOrder(null);
+      setLoading(true);
+
+      try {
+        const res = await fetch("/api/orders/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderNumber: num,
+            email: mail || undefined,
+            token: token || undefined,
+          }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          setError(data.error ?? "No se encontró el pedido");
+          return;
+        }
+
+        setOrder(data.order as TrackedOrder);
+      } catch {
+        setError("Error de conexión. Intenta de nuevo.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (hasSecureLink) {
+      fetchTrack(orderNumber, "", tokenFromUrl);
+    }
+  }, [hasSecureLink, orderNumber, tokenFromUrl, fetchTrack]);
 
   async function handleTrack(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setOrder(null);
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/orders/track", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderNumber, email }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? "No se encontró el pedido");
-        return;
-      }
-
-      setOrder(data.order as TrackedOrder);
-    } catch {
-      setError("Error de conexión. Intenta de nuevo.");
-    } finally {
-      setLoading(false);
-    }
+    await fetchTrack(orderNumber, email);
   }
 
   const currentStep = order ? statusStepIndex(order.status) : 0;
@@ -76,33 +95,47 @@ function SeguimientoContent() {
         SEGUIMIENTO <span className="text-neon-cyan">DE PEDIDO</span>
       </h1>
       <p className="mt-2 text-sm text-zinc-500">
-        Invitado o con cuenta — consulta con tu número de orden y el email del pedido
+        {hasSecureLink
+          ? "Cargando tu pedido desde el enlace del correo…"
+          : "Consulta con número de orden y email del pedido"}
       </p>
 
-      <form
-        onSubmit={handleTrack}
-        className="mt-8 space-y-4 rounded-2xl border border-glass glass-surface p-6"
-      >
-        <input
-          className="checkout-input font-mono"
-          placeholder="Número de orden (EDMA-20260625-1234)"
-          value={orderNumber}
-          onChange={(e) => setOrderNumber(e.target.value)}
-          required
-        />
-        <input
-          className="checkout-input"
-          type="email"
-          placeholder="Email usado en el pedido"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        {error && <p className="text-sm text-red-400">{error}</p>}
-        <button type="submit" className="btn-neon w-full py-2.5 text-sm" disabled={loading}>
-          {loading ? "Consultando…" : "Consultar estado"}
-        </button>
-      </form>
+      {loading && hasSecureLink && !order && !error && (
+        <p className="mt-6 text-sm text-zinc-400">Buscando tu pedido…</p>
+      )}
+
+      {!hasSecureLink && (
+        <form
+          onSubmit={handleTrack}
+          className="mt-8 space-y-4 rounded-2xl border border-glass glass-surface p-6"
+        >
+          <input
+            className="checkout-input font-mono"
+            placeholder="Número de orden (EDMA-20260625-1234)"
+            value={orderNumber}
+            onChange={(e) => setOrderNumber(e.target.value)}
+            required
+          />
+          <input
+            className="checkout-input"
+            type="email"
+            placeholder="Email usado en el pedido"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          {error && <p className="text-sm text-red-400">{error}</p>}
+          <button type="submit" className="btn-neon w-full py-2.5 text-sm" disabled={loading}>
+            {loading ? "Consultando…" : "Consultar estado"}
+          </button>
+        </form>
+      )}
+
+      {hasSecureLink && error && (
+        <p className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+          {error}
+        </p>
+      )}
 
       {order && (
         <div className="mt-8 space-y-6 rounded-2xl border border-glass glass-surface-elevated p-6">

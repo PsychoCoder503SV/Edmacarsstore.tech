@@ -1,5 +1,6 @@
 import type { CheckoutCustomer, PaymentMethod } from "@/lib/checkout";
 import { PAYMENT_LABELS } from "@/lib/checkout";
+import { buildOrderTrackUrl } from "@/lib/site-url";
 import nodemailer from "nodemailer";
 
 type OrderEmailItem = {
@@ -9,14 +10,6 @@ type OrderEmailItem = {
 };
 
 type Sender = { name: string; email: string };
-
-function siteUrl(): string {
-  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  if (explicit) return explicit;
-  const vercel = process.env.VERCEL_URL;
-  if (vercel) return `https://${vercel}`;
-  return "https://edmacarsstore-tech.vercel.app";
-}
 
 function escapeHtml(text: string): string {
   return text
@@ -63,7 +56,8 @@ export function buildOrderConfirmationHtml(
   payment: PaymentMethod,
   customer: CheckoutCustomer,
   items: OrderEmailItem[],
-  total: number
+  total: number,
+  trackToken?: string
 ): string {
   const rows = items
     .map(
@@ -79,7 +73,7 @@ export function buildOrderConfirmationHtml(
     )
     .join("");
 
-  const trackUrl = `${siteUrl()}/pedido/seguimiento?orden=${encodeURIComponent(orderNumber)}`;
+  const trackUrl = buildOrderTrackUrl(orderNumber, trackToken);
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -297,7 +291,8 @@ export async function sendOrderConfirmationEmail(
   payment: PaymentMethod,
   customer: CheckoutCustomer,
   items: OrderEmailItem[],
-  total: number
+  total: number,
+  trackToken?: string
 ): Promise<boolean> {
   const sender = resolveSender();
   if (!sender) {
@@ -306,7 +301,7 @@ export async function sendOrderConfirmationEmail(
   }
 
   const subject = `Pedido confirmado ${orderNumber} — Edmacars Store`;
-  const html = buildOrderConfirmationHtml(orderNumber, payment, customer, items, total);
+  const html = buildOrderConfirmationHtml(orderNumber, payment, customer, items, total, trackToken);
   const to = customer.email.trim();
 
   const provider = process.env.EMAIL_PROVIDER?.trim().toLowerCase() || "auto";

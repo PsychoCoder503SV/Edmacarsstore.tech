@@ -9,13 +9,56 @@ import { NextResponse } from "next/server";
 type TrackBody = {
   orderNumber?: string;
   email?: string;
+  token?: string;
 };
+
+function mapOrderResponse(
+  match: {
+    status: string;
+    created_at: string;
+    total_amount: number;
+    shipping_address: string | null;
+    order_items: unknown;
+  },
+  orderNumber: string
+) {
+  const meta = parseShippingAddress(match.shipping_address);
+
+  const items = (
+    (match.order_items as {
+      quantity: number;
+      unit_price: number;
+      products: { name: string; slug: string } | { name: string; slug: string }[] | null;
+    }[]) ?? []
+  ).map((item) => {
+    const product = Array.isArray(item.products) ? item.products[0] : item.products;
+    return {
+      name: product?.name ?? "Producto",
+      slug: product?.slug ?? null,
+      quantity: item.quantity,
+      unitPrice: Number(item.unit_price),
+    };
+  });
+
+  return {
+    orderNumber: meta?.order_number ?? orderNumber,
+    status: match.status,
+    createdAt: match.created_at,
+    total: Number(match.total_amount),
+    paymentMethod: meta?.payment_method ?? null,
+    customerName: meta?.customer_name ?? null,
+    address: meta?.address ?? null,
+    mapUrl: meta?.map_url ?? null,
+    items,
+  };
+}
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as TrackBody;
     const orderNumber = normalizeOrderNumber(body.orderNumber ?? "");
     const email = body.email?.trim().toLowerCase() ?? "";
+    const token = body.token?.trim() ?? "";
 
     if (!ORDER_NUMBER_RE.test(orderNumber)) {
       return NextResponse.json(
@@ -24,7 +67,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!email || !email.includes("@")) {
+    if (!token && (!email || !email.includes("@"))) {
       return NextResponse.json({ error: "Ingresa el email que usaste en el pedido" }, { status: 400 });
     }
 
@@ -57,50 +100,22 @@ export async function POST(request: Request) {
 
     const match = (orders ?? []).find((row) => {
       const meta = parseShippingAddress(row.shipping_address as string);
-      return meta?.order_number === orderNumber && meta.email?.toLowerCase() === email;
+      if (!meta || meta.order_number !== orderNumber) return false;
+      if (token) return meta.track_token === token;
+      return meta.email?.toLowerCase() === email;
     });
 
     if (!match) {
       return NextResponse.json(
         {
           error:
-            "No encontramos un pedido con ese número y email. Revisa los datos o contáctanos por WhatsApp.",
+            "No encontramos un pedido con esos datos. Revisa el enlace del correo o contáctanos por WhatsApp.",
         },
         { status: 404 }
       );
     }
 
-    const meta = parseShippingAddress(match.shipping_address as string);
-
-    const items = (
-      (match.order_items as {
-        quantity: number;
-        unit_price: number;
-        products: { name: string; slug: string } | { name: string; slug: string }[] | null;
-      }[]) ?? []
-    ).map((item) => {
-      const product = Array.isArray(item.products) ? item.products[0] : item.products;
-      return {
-        name: product?.name ?? "Producto",
-        slug: product?.slug ?? null,
-        quantity: item.quantity,
-        unitPrice: Number(item.unit_price),
-      };
-    });
-
-    return NextResponse.json({
-      order: {
-        orderNumber: meta?.order_number ?? orderNumber,
-        status: match.status,
-        createdAt: match.created_at,
-        total: Number(match.total_amount),
-        paymentMethod: meta?.payment_method ?? null,
-        customerName: meta?.customer_name ?? null,
-        address: meta?.address ?? null,
-        mapUrl: meta?.map_url ?? null,
-        items,
-      },
-    });
+    return NextResponse.json({ order: mapOrderResponse(match, orderNumber) });
   } catch (err) {
     console.error("[track]", err);
     return NextResponse.json({ error: "Error al consultar el pedido" }, { status: 500 });

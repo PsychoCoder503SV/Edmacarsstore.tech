@@ -35,6 +35,7 @@ export type OrderConfirmationData = {
   createdAt: string;
   accountWarning?: string;
   accountSuccess?: string;
+  trackToken?: string;
 };
 
 export const ORDER_CONFIRM_STORAGE_KEY = "edmacars_order_confirm";
@@ -129,10 +130,12 @@ export function formatOrderMessage(
 export function buildShippingRecord(
   orderNumber: string,
   payment: PaymentMethod,
-  customer: CheckoutCustomer
+  customer: CheckoutCustomer,
+  trackToken?: string
 ): string {
   return JSON.stringify({
     order_number: orderNumber,
+    track_token: trackToken,
     payment_method: payment,
     customer_name: customer.fullName,
     phone: customer.phone,

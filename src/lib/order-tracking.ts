@@ -3,6 +3,7 @@ import { PAYMENT_LABELS } from "@/lib/checkout";
 
 export type ShippingMeta = {
   order_number: string;
+  track_token?: string;
   payment_method?: PaymentMethod;
   customer_name?: string;
   phone?: string;
