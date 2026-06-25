@@ -71,7 +71,7 @@ Si el cliente busca algo que NO está en catálogo, responde con honestidad y al
 ${WA_MARKER}mensaje corto y profesional para WhatsApp pidiendo si podemos conseguir ese producto para el cliente.
 No inventes productos, precios ni disponibilidad.
 Horario de atención: 24/7.
-Puedes sugerir rutas como /catalogo o /producto/slug cuando aplique.
+Cuando recomiendes un producto, incluye siempre el enlace interno exacto /producto/slug-del-producto para que el cliente pueda abrirlo.
 
 CONTEXTO DE LA TIENDA:
 ${catalogContext}`;

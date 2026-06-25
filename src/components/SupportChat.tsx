@@ -1,5 +1,6 @@
 "use client";
 
+import { ChatMessageContent } from "@/components/ChatMessageContent";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
@@ -122,7 +123,11 @@ export function SupportChat() {
                     : "mr-auto border border-white/10 bg-white/5 text-zinc-200"
                 }`}
               >
-                <p className="whitespace-pre-wrap">{msg.content}</p>
+                {msg.role === "assistant" ? (
+                  <ChatMessageContent text={msg.content} onNavigate={() => setOpen(false)} />
+                ) : (
+                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                )}
                 {msg.whatsappUrl && (
                   <a
                     href={msg.whatsappUrl}
