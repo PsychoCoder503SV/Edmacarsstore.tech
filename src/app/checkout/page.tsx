@@ -30,7 +30,7 @@ export default function CheckoutPage() {
           CONFIRMAR <span className="text-neon-cyan">PEDIDO</span>
         </h1>
         <p className="mt-2 text-sm text-zinc-500">
-          Completa tus datos, elige el pago y enviamos la orden a WhatsApp de Edmacars
+          Completa tus datos y elige cómo deseas pagar
         </p>
         <CheckoutForm />
       </section>

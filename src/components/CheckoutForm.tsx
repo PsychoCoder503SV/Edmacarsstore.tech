@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCart } from "@/components/CartProvider";
 import { cartTotal } from "@/lib/cart";
@@ -46,7 +45,6 @@ function inputClass(hasError?: string) {
 }
 
 export function CheckoutForm() {
-  const router = useRouter();
   const { items, clearCart } = useCart();
   const total = cartTotal(items);
 
@@ -62,13 +60,6 @@ export function CheckoutForm() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [confirmed, setConfirmed] = useState<{
-    orderNumber: string;
-    payment: PaymentMethod;
-    customer: CheckoutCustomer;
-    items: typeof items;
-    total: number;
-  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const passwordRules = getPasswordRules(password);
@@ -150,65 +141,23 @@ export function CheckoutForm() {
     }
 
     setSubmitting(true);
+    const orderItems = [...items];
+    const orderCustomer = customer();
+    const orderTotal = total;
+
     try {
       const num = generateOrderNumber();
       const userId = await maybeCreateAccount();
       await saveOrder(num, userId);
 
-      const msg = formatOrderMessage(num, payment, customer(), items, total);
-      window.open(getWhatsAppUrl(msg), "_blank", "noopener,noreferrer");
-
-      setConfirmed({
-        orderNumber: num,
-        payment,
-        customer: customer(),
-        items: [...items],
-        total,
-      });
       clearCart();
+
+      const msg = formatOrderMessage(num, payment, orderCustomer, orderItems, orderTotal);
+      window.location.assign(getWhatsAppUrl(msg));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al confirmar");
-    } finally {
       setSubmitting(false);
     }
-  }
-
-  function handleTransferProof() {
-    if (!confirmed) return;
-    const msg = formatOrderMessage(
-      confirmed.orderNumber,
-      "transferencia",
-      confirmed.customer,
-      confirmed.items,
-      confirmed.total,
-      { transferProof: true }
-    );
-    window.open(getWhatsAppUrl(msg), "_blank", "noopener,noreferrer");
-  }
-
-  if (confirmed) {
-    return (
-      <div className="mt-8 rounded-2xl border border-neon-cyan/30 bg-neon-cyan/5 p-8 text-center">
-        <p className="text-sm text-neon-cyan">¡Pedido registrado!</p>
-        <p className="mt-2 font-brand text-3xl text-white">{confirmed.orderNumber}</p>
-        <p className="mt-4 text-sm text-zinc-400">
-          Te redirigimos a WhatsApp para coordinar la entrega.
-          {confirmed.payment === "transferencia" && " Realiza la transferencia y envía tu comprobante."}
-        </p>
-        {confirmed.payment === "transferencia" && (
-          <button type="button" className="btn-neon mt-6 px-6 py-2.5 text-sm" onClick={handleTransferProof}>
-            Enviar comprobante de pago
-          </button>
-        )}
-        <button
-          type="button"
-          className="btn-neon-outline mt-4 block w-full py-2.5 text-sm"
-          onClick={() => router.push("/")}
-        >
-          Volver al inicio
-        </button>
-      </div>
-    );
   }
 
   return (
@@ -216,7 +165,7 @@ export function CheckoutForm() {
       <div className="space-y-6">
         <div>
           <h2 className="text-lg font-semibold text-white">Datos de entrega</h2>
-          <p className="mt-1 text-xs text-zinc-500">Se envían con tu pedido por WhatsApp</p>
+          <p className="mt-1 text-xs text-zinc-500">Información para coordinar tu entrega</p>
         </div>
 
         <div>
@@ -236,7 +185,7 @@ export function CheckoutForm() {
         <div>
           <input
             className={inputClass(fieldErrors.phone)}
-            placeholder="Teléfono / WhatsApp * (ej. 7123 4567)"
+            placeholder="Teléfono * (ej. 7123 4567)"
             value={phone}
             onChange={(e) => {
               setPhone(e.target.value);
@@ -387,9 +336,6 @@ export function CheckoutForm() {
               <li>Tipo de cuenta: {BANK_DETAILS.accountType}</li>
               <li>Banco: {BANK_DETAILS.bank}</li>
             </ul>
-            <p className="mt-3 text-xs text-zinc-500">
-              Al confirmar, recibirás el número de orden por WhatsApp. Luego envía tu comprobante.
-            </p>
           </div>
         )}
 
@@ -417,13 +363,7 @@ export function CheckoutForm() {
           disabled={submitting}
           onClick={handleConfirm}
         >
-          {submitting
-            ? "Procesando..."
-            : payment === "contra_entrega"
-              ? "Confirmar pedido y enviar a WhatsApp"
-              : payment === "transferencia"
-                ? "Confirmar pedido y abrir WhatsApp"
-                : "Confirmar pedido"}
+          {submitting ? "Procesando pedido…" : "Confirmar pedido"}
         </button>
       </div>
     </div>
