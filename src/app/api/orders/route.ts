@@ -24,6 +24,25 @@ type OrderPayload = {
   userId?: string | null;
 };
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+async function resolveOrderUserId(
+  supabase: ReturnType<typeof createSupabaseAdmin>,
+  userId: string | null | undefined,
+  customerName: string
+): Promise<string | null> {
+  const id = typeof userId === "string" ? userId.trim() : "";
+  if (!id || !UUID_RE.test(id)) return null;
+
+  const { error } = await supabase.from("profiles").upsert(
+    { id, full_name: customerName, role: "customer" },
+    { onConflict: "id" }
+  );
+
+  return error ? null : id;
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as OrderPayload;
@@ -35,11 +54,12 @@ export async function POST(request: Request) {
 
     const supabase = createSupabaseAdmin();
     const shipping_address = buildShippingRecord(orderNumber, paymentMethod, customer);
+    const resolvedUserId = await resolveOrderUserId(supabase, userId, customer.fullName);
 
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
-        user_id: userId ?? null,
+        user_id: resolvedUserId,
         status: "pending",
         total_amount: total,
         shipping_address,
