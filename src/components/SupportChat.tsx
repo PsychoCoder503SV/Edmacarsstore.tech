@@ -45,25 +45,25 @@ export function SupportChat() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Error al consultar");
 
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: data.reply,
+          content:
+            typeof data.reply === "string" && data.reply.trim()
+              ? data.reply
+              : "Disculpa, no pude responder ahora. Escríbenos por WhatsApp — atendemos 24/7.",
           whatsappUrl: data.whatsappSolicitud?.url ?? null,
         },
       ]);
-    } catch (err) {
+    } catch {
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
           content:
-            err instanceof Error
-              ? err.message
-              : "No pude responder ahora. Intenta de nuevo en un momento.",
+            "Disculpa, hubo un problema de conexión. Intenta de nuevo o escríbenos por WhatsApp — atendemos 24/7.",
         },
       ]);
     } finally {

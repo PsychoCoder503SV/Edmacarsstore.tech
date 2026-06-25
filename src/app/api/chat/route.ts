@@ -1,4 +1,6 @@
 import {
+  CHAT_FALLBACK_REPLY,
+  CHAT_FALLBACK_WHATSAPP,
   buildSystemPrompt,
   buildWhatsAppSolicitudUrl,
   callNvidiaChat,
@@ -9,13 +11,21 @@ import { NextResponse } from "next/server";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
+function fallbackResponse() {
+  const url = buildWhatsAppSolicitudUrl(CHAT_FALLBACK_WHATSAPP);
+  return NextResponse.json({
+    reply: CHAT_FALLBACK_REPLY,
+    whatsappSolicitud: url ? { url, preview: CHAT_FALLBACK_WHATSAPP } : null,
+  });
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as { messages?: ChatMessage[] };
     const history = body.messages ?? [];
 
     if (!history.length || history[history.length - 1]?.role !== "user") {
-      return NextResponse.json({ error: "Mensaje inválido" }, { status: 400 });
+      return NextResponse.json({ error: "invalid_message" }, { status: 400 });
     }
 
     const catalogContext = await loadSupportContext();
@@ -38,7 +48,7 @@ export async function POST(request: Request) {
         : null,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Error del asistente";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[chat] assistant error:", err);
+    return fallbackResponse();
   }
 }
