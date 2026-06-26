@@ -18,15 +18,21 @@ export function CategoryIconDisplay({ category, size = "md", className = "" }: P
   const s = sizeMap[size];
 
   if (category.icon_url) {
+    const isSvg = /\.svg(\?|$)/i.test(category.icon_url);
     return (
       <div className={`relative overflow-hidden rounded-2xl border border-white/10 bg-black/30 ${s.box} ${className}`}>
-        <Image
-          src={category.icon_url}
-          alt=""
-          fill
-          className="object-cover"
-          sizes={`${s.img}px`}
-        />
+        {isSvg ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={category.icon_url} alt="" className="h-full w-full object-contain p-1" />
+        ) : (
+          <Image
+            src={category.icon_url}
+            alt=""
+            fill
+            className="object-contain p-1"
+            sizes={`${s.img}px`}
+          />
+        )}
       </div>
     );
   }
