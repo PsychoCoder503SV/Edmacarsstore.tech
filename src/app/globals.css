@@ -47,11 +47,16 @@ body {
 }
 
 .site-bg-car-img {
-  display: block;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  /* Más grande que la pantalla: al mover no se ve corte/hueco en los bordes */
+  width: 115%;
+  height: 115%;
+  max-width: none;
   object-fit: cover;
-  object-position: calc(50% + 4ch) center;
+  object-position: center center;
+  transform: translate(calc(-50% + 4ch), -50%);
   opacity: 0.48;
 }
 
