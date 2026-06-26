@@ -15,7 +15,7 @@ export function ProductImage({
   fill,
   className = "",
   priority,
-  fit = "contain",
+  fit = "cover",
 }: ProductImageProps) {
   return (
     // Supabase storage: img nativo evita fallos del optimizador de Next.js
@@ -34,7 +34,7 @@ export function ProductImage({
               width: "100%",
               height: "100%",
               objectFit: fit,
-              objectPosition: "center",
+              objectPosition: "center center",
             }
           : undefined
       }

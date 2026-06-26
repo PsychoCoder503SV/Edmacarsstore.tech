@@ -55,32 +55,28 @@ export function ProductCardMedia({
       onBlur={stopCycle}
     >
       <div
-        className={`relative aspect-[4/3] overflow-hidden bg-zinc-950/70 bg-gradient-to-br ${gradient}`}
+        className={`relative aspect-square overflow-hidden bg-zinc-950 bg-gradient-to-br ${gradient}`}
       >
-        <div className="product-overlay absolute inset-0 z-[1] pointer-events-none" />
-
         {cover ? (
-          <div className="absolute inset-0 z-0 p-2 sm:p-3">
-            <div className="relative h-full w-full">
-              {images.map((url, i) => (
-                <ProductImage
-                  key={`${url}-${i}`}
-                  src={url}
-                  alt={name}
-                  fill
-                  fit="contain"
-                  className={`transition-all duration-500 ease-out ${
-                    i === index ? "opacity-100 scale-100" : "opacity-0 scale-[0.97]"
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
+          images.map((url, i) => (
+            <ProductImage
+              key={`${url}-${i}`}
+              src={url}
+              alt={name}
+              fill
+              fit="cover"
+              className={`z-0 transition-opacity duration-500 ease-out group-hover:scale-[1.03] ${
+                i === index ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          ))
         ) : (
           <span className="absolute inset-0 z-[2] flex items-center justify-center text-5xl opacity-60 transition group-hover:scale-110 group-hover:opacity-90">
             {categoryIcon(categorySlug)}
           </span>
         )}
+
+        <div className="product-overlay absolute inset-0 z-[1] pointer-events-none opacity-60" />
 
         {images.length > 1 && (
           <>
