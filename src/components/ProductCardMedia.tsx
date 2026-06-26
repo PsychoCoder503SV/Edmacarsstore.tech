@@ -11,7 +11,6 @@ type Props = {
   categorySlug: string;
   gradient: string;
   productHref: string;
-  stock: number;
 };
 
 export function ProductCardMedia({
@@ -20,7 +19,6 @@ export function ProductCardMedia({
   categorySlug,
   gradient,
   productHref,
-  stock,
 }: Props) {
   const [index, setIndex] = useState(0);
   const [hovering, setHovering] = useState(false);
@@ -96,15 +94,6 @@ export function ProductCardMedia({
           </>
         )}
 
-        {stock <= 0 ? (
-          <span className="absolute left-3 top-3 z-[2] rounded-full border border-zinc-500/40 bg-zinc-800/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-300">
-            agotado
-          </span>
-        ) : stock <= 3 ? (
-          <span className="absolute left-3 top-3 z-[2] rounded-full border border-amber-400/30 bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
-            últimas unidades
-          </span>
-        ) : null}
       </div>
     </Link>
   );

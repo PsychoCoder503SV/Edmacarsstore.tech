@@ -1,5 +1,6 @@
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductCardMedia } from "@/components/ProductCardMedia";
+import { ProductStockBadge } from "@/components/ProductStockBadge";
 import type { Product } from "@/lib/database.types";
 import { productImages } from "@/lib/images";
 import { productGradient } from "@/lib/store";
@@ -20,13 +21,13 @@ export function ProductCard({ product }: ProductCardProps) {
     <article
       className={`group card-hover-cyan relative flex flex-col overflow-hidden rounded-2xl border border-glass glass-surface-elevated transition duration-300 hover:-translate-y-1 hover:border-neon-cyan/30 ${product.stock <= 0 ? "opacity-75" : ""}`}
     >
+      <ProductStockBadge stock={product.stock} />
       <ProductCardMedia
         images={images}
         name={product.name}
         categorySlug={categorySlug}
         gradient={gradient}
         productHref={productHref}
-        stock={product.stock}
       />
 
       <div className="flex flex-1 flex-col p-4">
