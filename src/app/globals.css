@@ -36,25 +36,23 @@ body {
   isolation: isolate;
 }
 
-/* Carro: ancho max-w-2xl (42rem), completo, fijo, un poco a la izquierda del centro */
+/* Fondo a pantalla completa: una sola capa fija, sin repetir */
 .site-bg-car {
   position: fixed;
+  inset: 0;
   z-index: -2;
-  top: 46%;
-  left: calc(50% - 14px);
-  transform: translate(-50%, -50%);
-  width: min(42rem, 92vw);
   pointer-events: none;
+  overflow: hidden;
+  background-color: var(--background);
 }
 
 .site-bg-car-img {
   display: block;
   width: 100%;
-  height: auto;
-  max-height: min(58vh, 480px);
-  object-fit: contain;
-  object-position: center center;
-  opacity: 0.52;
+  height: 100%;
+  object-fit: cover;
+  object-position: calc(50% - 14px) center;
+  opacity: 0.48;
 }
 
 .site-bg-dim {
