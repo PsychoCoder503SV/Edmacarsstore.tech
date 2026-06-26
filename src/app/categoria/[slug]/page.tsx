@@ -1,4 +1,4 @@
-import { BrandLogo } from "@/components/BrandLogo";
+import { CategoryIconDisplay } from "@/components/CategoryIconDisplay";
 import { ProductCard } from "@/components/ProductCard";
 import { getCategoryBySlug, getProducts } from "@/lib/store";
 import Image from "next/image";
@@ -25,10 +25,10 @@ export default async function CategoriaPage({ params }: PageProps) {
           <Link href="/" className="text-xs text-neon-cyan transition hover:text-white">
             ← Inicio
           </Link>
-          <div className="mt-4">
-            <BrandLogo size="lg" showName />
+          <div className="mt-4 flex items-center gap-4">
+            <CategoryIconDisplay category={category} size="lg" />
+            <h1 className="text-3xl font-semibold text-white">{category.name}</h1>
           </div>
-          <h1 className="mt-4 text-3xl font-semibold text-white">{category.name}</h1>
           <p className="mt-2 text-sm text-zinc-400">
             {products.length} producto{products.length !== 1 ? "s" : ""} disponible
             {products.length !== 1 ? "s" : ""} en esta categoría

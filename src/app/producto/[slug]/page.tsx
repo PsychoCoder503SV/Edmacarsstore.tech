@@ -1,7 +1,8 @@
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
 import { productImages } from "@/lib/images";
-import { productDisplayDescription } from "@/lib/product-description";
+import { ProductHighlights } from "@/components/ProductHighlights";
+import { productDisplayDescription, productHighlights } from "@/lib/product-description";
 import { getProductBySlug } from "@/lib/store";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -17,6 +18,7 @@ export default async function ProductoPage({ params }: PageProps) {
 
   const images = productImages(product);
   const description = productDisplayDescription(product.description);
+  const highlights = productHighlights(product.description);
   const categoryName = product.categories?.name ?? "Producto";
   const categorySlug = product.categories?.slug ?? "";
 
@@ -45,6 +47,8 @@ export default async function ProductoPage({ params }: PageProps) {
             {description && (
               <p className="mt-6 text-sm leading-relaxed text-zinc-400">{description}</p>
             )}
+
+            <ProductHighlights items={highlights} />
 
             <div className="mt-8">
               <AddToCartButton

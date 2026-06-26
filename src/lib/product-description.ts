@@ -1,10 +1,11 @@
 export type ProductDescriptionData = {
   text: string;
   gallery: string[];
+  highlights: string[];
 };
 
 export function parseProductDescription(raw: string | null): ProductDescriptionData {
-  if (!raw) return { text: "", gallery: [] };
+  if (!raw) return { text: "", gallery: [], highlights: [] };
   try {
     const parsed = JSON.parse(raw) as Partial<ProductDescriptionData>;
     if (parsed && typeof parsed.text === "string") {
@@ -13,12 +14,15 @@ export function parseProductDescription(raw: string | null): ProductDescriptionD
         gallery: Array.isArray(parsed.gallery)
           ? parsed.gallery.filter((u): u is string => typeof u === "string" && u.length > 0)
           : [],
+        highlights: Array.isArray(parsed.highlights)
+          ? parsed.highlights.filter((h): h is string => typeof h === "string" && h.trim().length > 0)
+          : [],
       };
     }
   } catch {
     /* texto plano legacy */
   }
-  return { text: raw, gallery: [] };
+  return { text: raw, gallery: [], highlights: [] };
 }
 
 export function resolveGallery(
@@ -35,4 +39,8 @@ export function resolveGallery(
 
 export function productDisplayDescription(description: string | null): string {
   return parseProductDescription(description).text;
+}
+
+export function productHighlights(description: string | null): string[] {
+  return parseProductDescription(description).highlights;
 }

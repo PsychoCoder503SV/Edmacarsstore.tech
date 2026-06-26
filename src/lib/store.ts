@@ -8,7 +8,7 @@ export async function getCategories(): Promise<Category[]> {
   const supabase = createSupabaseClient();
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name, slug, description")
+    .select("id, name, slug, description, icon_url")
     .order("name");
 
   if (error) {
@@ -76,7 +76,7 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
   const supabase = createSupabaseClient();
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name, slug, description")
+    .select("id, name, slug, description, icon_url")
     .eq("slug", slug)
     .maybeSingle();
   if (error || !data) return null;
