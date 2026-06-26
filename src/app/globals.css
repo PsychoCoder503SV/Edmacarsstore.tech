@@ -60,7 +60,7 @@ body {
   min-height: 100%;
   max-width: none;
   object-fit: cover;
-  object-position: calc(50% - 2px) center;
+  object-position: calc(50% + 2px) center;
   opacity: 0.48;
 }
 
