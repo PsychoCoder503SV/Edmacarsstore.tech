@@ -9,7 +9,6 @@ import { useCart } from "@/components/CartProvider";
 import { useAuth } from "@/lib/auth";
 import { cartTotal } from "@/lib/cart";
 import {
-  buildMapUrl,
   generateOrderNumber,
   saveOrderConfirmation,
   type CheckoutCustomer,
@@ -18,7 +17,6 @@ import {
 import { registerAndSignIn, signInCustomer } from "@/lib/auth-client";
 import { createSupabaseClient } from "@/lib/supabase";
 import {
-  getPasswordRules,
   hasFieldErrors,
   normalizeSvPhone,
   validateCheckoutFields,
@@ -33,14 +31,6 @@ const DeliveryMap = dynamic(() => import("@/components/DeliveryMap"), {
     </div>
   ),
 });
-
-const PASSWORD_RULE_LABELS: { key: keyof ReturnType<typeof getPasswordRules>; label: string }[] = [
-  { key: "minLength", label: "Mínimo 8 caracteres" },
-  { key: "uppercase", label: "Una mayúscula" },
-  { key: "lowercase", label: "Una minúscula" },
-  { key: "number", label: "Un número" },
-  { key: "special", label: "Un signo (!@#$%…)" },
-];
 
 type CheckoutMode = "guest" | "account";
 
@@ -72,9 +62,16 @@ export function CheckoutForm() {
   const [submitting, setSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
+  const [useNewAddress, setUseNewAddress] = useState(false);
 
-  const passwordRules = getPasswordRules(password);
   const isLoggedIn = !!user;
+  const hasSavedAddress = !!(
+    isLoggedIn &&
+    profile?.default_address?.trim() &&
+    profile.default_lat != null &&
+    profile.default_lng != null
+  );
+  const showSavedAddressCard = hasSavedAddress && !useNewAddress;
 
   useEffect(() => {
     if (!user) return;
@@ -88,12 +85,34 @@ export function CheckoutForm() {
     if (profile?.preferred_payment === "transferencia" || profile?.preferred_payment === "contra_entrega") {
       setPreferredPayment(profile.preferred_payment);
     }
+    if (profile?.default_address?.trim() && profile.default_lat != null && profile.default_lng != null) {
+      setUseNewAddress(false);
+    }
   }, [user, profile]);
 
   const handleMapChange = useCallback((a: number, b: number) => {
     setLat(a);
     setLng(b);
   }, []);
+
+  const handleUseNewAddress = useCallback(() => {
+    setUseNewAddress(true);
+    setAddress("");
+    setNotes("");
+    setLat(13.798);
+    setLng(-88.91);
+    setFieldErrors((prev) => ({ ...prev, address: undefined }));
+  }, []);
+
+  const handleUseSavedAddress = useCallback(() => {
+    if (!profile) return;
+    setUseNewAddress(false);
+    setAddress(profile.default_address ?? "");
+    setNotes(profile.address_notes ?? "");
+    if (profile.default_lat != null) setLat(profile.default_lat);
+    if (profile.default_lng != null) setLng(profile.default_lng);
+    setFieldErrors((prev) => ({ ...prev, address: undefined }));
+  }, [profile]);
 
   const customer = (): CheckoutCustomer => {
     const normalized = normalizeSvPhone(phone.trim());
@@ -361,110 +380,99 @@ export function CheckoutForm() {
             {fieldErrors.email && <p className="mt-1 text-xs text-red-400">{fieldErrors.email}</p>}
           </div>
 
-          <div>
-            <textarea
-              className={`${inputClass(fieldErrors.address)} min-h-20`}
-              placeholder="Dirección completa de entrega * (calle, número, colonia)"
-              value={address}
-              onChange={(e) => {
-                setAddress(e.target.value);
-                if (fieldErrors.address) setFieldErrors((prev) => ({ ...prev, address: undefined }));
-              }}
-              aria-invalid={!!fieldErrors.address}
-            />
-            {fieldErrors.address && <p className="mt-1 text-xs text-red-400">{fieldErrors.address}</p>}
-          </div>
-
-          <textarea
-            className="checkout-input min-h-16"
-            placeholder="Referencias (opcional)"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-
-          <div>
-            <p className="mb-2 text-sm font-medium text-zinc-300">Ubicación en mapa</p>
-            <div className="hidden lg:block">
-              <DeliveryMap lat={lat} lng={lng} onChange={handleMapChange} />
+          {showSavedAddressCard ? (
+            <div className="checkout-saved-address-card">
+              <div className="flex items-start gap-3">
+                <span className="checkout-saved-address-icon" aria-hidden>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11Z"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                    />
+                    <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.75" />
+                  </svg>
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium uppercase tracking-wide text-neon-cyan">
+                    Dirección guardada
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-white">{profile?.default_address}</p>
+                  {profile?.address_notes && (
+                    <p className="mt-1 text-xs text-zinc-400">{profile.address_notes}</p>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn-neon-outline mt-4 w-full py-2.5 text-sm"
+                onClick={handleUseNewAddress}
+              >
+                Enviar a una dirección nueva
+              </button>
             </div>
-            <div className="lg:hidden">
-              {mobileMapOpen ? (
-                <>
-                  <DeliveryMap lat={lat} lng={lng} onChange={handleMapChange} />
-                  <button
-                    type="button"
-                    className="mt-2 text-xs text-zinc-500 underline decoration-zinc-600 underline-offset-2"
-                    onClick={() => setMobileMapOpen(false)}
-                  >
-                    Ocultar mapa
-                  </button>
-                </>
-              ) : (
+          ) : (
+            <>
+              {hasSavedAddress && useNewAddress && (
                 <button
                   type="button"
-                  className="btn-neon-outline w-full py-3 text-sm touch-manipulation"
-                  onClick={() => setMobileMapOpen(true)}
+                  className="text-xs text-neon-cyan underline decoration-neon-cyan/40 underline-offset-2 hover:text-white"
+                  onClick={handleUseSavedAddress}
                 >
-                  Abrir mapa de entrega (opcional)
+                  Usar mi dirección guardada
                 </button>
               )}
-            </div>
-            <p className="mt-2 text-xs text-zinc-500">
-              Coordenadas: {lat.toFixed(5)}, {lng.toFixed(5)} ·{" "}
-              <a href={buildMapUrl(lat, lng)} target="_blank" rel="noreferrer" className="text-neon-cyan">
-                Ver en mapa
-              </a>
-            </p>
-          </div>
 
-          {!isLoggedIn && checkoutMode === "guest" && (
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 p-4">
-              <input
-                type="checkbox"
-                checked={createAccount}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setCreateAccount(checked);
-                  if (!checked) {
-                    setPassword("");
-                    setFieldErrors((prev) => ({ ...prev, password: undefined }));
-                  }
-                }}
-                className="mt-1"
-              />
-              <span>
-                <span className="block text-sm font-medium text-zinc-200">Crear cuenta al confirmar</span>
-                <span className="text-xs text-zinc-500">
-                  Opcional — guarda tu historial y datos para próximas compras
-                </span>
-              </span>
-            </label>
-          )}
+              <div>
+                <textarea
+                  className={`${inputClass(fieldErrors.address)} min-h-20`}
+                  placeholder="Dirección completa de entrega * (calle, número, colonia)"
+                  value={address}
+                  onChange={(e) => {
+                    setAddress(e.target.value);
+                    if (fieldErrors.address) setFieldErrors((prev) => ({ ...prev, address: undefined }));
+                  }}
+                  aria-invalid={!!fieldErrors.address}
+                />
+                {fieldErrors.address && <p className="mt-1 text-xs text-red-400">{fieldErrors.address}</p>}
+              </div>
 
-          {!isLoggedIn && checkoutMode === "guest" && createAccount && (
-            <div className="space-y-3 rounded-xl border border-neon-cyan/20 bg-neon-cyan/5 p-4">
-              <p className="text-sm font-medium text-zinc-200">Contraseña de tu cuenta</p>
-              <input
-                className={inputClass(fieldErrors.password)}
-                type="password"
-                placeholder="Contraseña *"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
-                }}
-                autoComplete="new-password"
-                aria-invalid={!!fieldErrors.password}
+              <textarea
+                className="checkout-input min-h-16"
+                placeholder="Referencias (opcional)"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
               />
-              {fieldErrors.password && <p className="text-xs text-red-400">{fieldErrors.password}</p>}
-              <ul className="grid gap-1 text-xs sm:grid-cols-2">
-                {PASSWORD_RULE_LABELS.map(({ key, label }) => (
-                  <li key={key} className={passwordRules[key] ? "text-neon-cyan" : "text-zinc-500"}>
-                    {passwordRules[key] ? "✓" : "○"} {label}
-                  </li>
-                ))}
-              </ul>
-            </div>
+
+              <div>
+                <p className="mb-2 text-sm font-medium text-zinc-300">Ubicación en mapa</p>
+                <div className="hidden lg:block">
+                  <DeliveryMap lat={lat} lng={lng} onChange={handleMapChange} />
+                </div>
+                <div className="lg:hidden">
+                  {mobileMapOpen ? (
+                    <>
+                      <DeliveryMap lat={lat} lng={lng} onChange={handleMapChange} />
+                      <button
+                        type="button"
+                        className="mt-2 text-xs text-zinc-500 underline decoration-zinc-600 underline-offset-2"
+                        onClick={() => setMobileMapOpen(false)}
+                      >
+                        Ocultar mapa
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn-neon-outline w-full py-3 text-sm touch-manipulation"
+                      onClick={() => setMobileMapOpen(true)}
+                    >
+                      Abrir mapa de entrega (opcional)
+                    </button>
+                  )}
+                </div>
+              </div>
+            </>
           )}
         </div>
 
@@ -478,6 +486,21 @@ export function CheckoutForm() {
             confirmDisabled={!isLoggedIn && checkoutMode === "account"}
             onConfirm={handleConfirm}
             accountGateHint={!isLoggedIn && checkoutMode === "account"}
+            showCreateAccount={!isLoggedIn && checkoutMode === "guest"}
+            createAccount={createAccount}
+            onCreateAccountChange={(checked) => {
+              setCreateAccount(checked);
+              if (!checked) {
+                setPassword("");
+                setFieldErrors((prev) => ({ ...prev, password: undefined }));
+              }
+            }}
+            password={password}
+            onPasswordChange={setPassword}
+            passwordFieldError={fieldErrors.password}
+            onClearPasswordError={() =>
+              setFieldErrors((prev) => ({ ...prev, password: undefined }))
+            }
           />
         </div>
       </div>
