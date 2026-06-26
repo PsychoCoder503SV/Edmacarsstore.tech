@@ -2,6 +2,7 @@ import { verifyAdminRequest } from "@/lib/admin-auth";
 import { notifyOrderStatusChange, type OrderStatus } from "@/lib/order-status-notify";
 import { parseShippingAddress } from "@/lib/order-tracking";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
+import { applyStockDelta } from "@/lib/stock-sync";
 import { NextResponse } from "next/server";
 
 const VALID_STATUSES: OrderStatus[] = [
@@ -25,16 +26,7 @@ async function restoreStockOnCancel(orderId: string): Promise<void> {
 
   for (const item of items) {
     if (!item.product_id) continue;
-    const { data: product } = await supabase
-      .from("products")
-      .select("stock")
-      .eq("id", item.product_id)
-      .single();
-    if (!product) continue;
-    await supabase
-      .from("products")
-      .update({ stock: Number(product.stock) + item.quantity })
-      .eq("id", item.product_id);
+    await applyStockDelta(supabase, item.product_id, item.quantity);
   }
 }
 

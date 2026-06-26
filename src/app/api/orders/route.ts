@@ -6,6 +6,7 @@ import {
   type PaymentMethod,
 } from "@/lib/checkout";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
+import { applyStockDelta } from "@/lib/stock-sync";
 import { sendOrderConfirmationEmail } from "@/lib/order-email";
 import { notifyStoreTelegram } from "@/lib/telegram-server";
 import { NextResponse } from "next/server";
@@ -121,14 +122,7 @@ export async function POST(request: Request) {
     }
 
     for (const item of items) {
-      const { data: product } = await supabase
-        .from("products")
-        .select("stock")
-        .eq("id", item.productId)
-        .single();
-      if (!product) continue;
-      const nextStock = Math.max(0, Number(product.stock) - item.quantity);
-      await supabase.from("products").update({ stock: nextStock }).eq("id", item.productId);
+      await applyStockDelta(supabase, item.productId, -item.quantity);
     }
 
     const message = formatOrderMessage(
