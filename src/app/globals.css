@@ -51,7 +51,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: calc(50% - 14px) center;
+  object-position: calc(50% + 5ch) center;
   opacity: 0.48;
 }
 
