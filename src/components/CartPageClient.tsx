@@ -26,9 +26,11 @@ export function CartPageClient() {
           key={item.id}
           className="flex gap-4 rounded-2xl border border-glass glass-surface-elevated p-4"
         >
-          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface">
+          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-zinc-950/70 p-1">
             {item.image ? (
-              <ProductImage src={item.image} alt={item.name} fill className="object-cover" />
+              <div className="relative h-full w-full">
+                <ProductImage src={item.image} alt={item.name} fill fit="contain" />
+              </div>
             ) : (
               <span className="flex h-full items-center justify-center text-2xl opacity-40">📦</span>
             )}
