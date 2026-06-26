@@ -1,8 +1,10 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { createSupabaseClient } from "@/lib/supabase";
 import type { Category, Product } from "@/lib/database.types";
 import { productImages } from "@/lib/images";
 
 export async function getCategories(): Promise<Category[]> {
+  noStore();
   const supabase = createSupabaseClient();
   const { data, error } = await supabase
     .from("categories")
@@ -20,6 +22,7 @@ export async function getProducts(options?: {
   categorySlug?: string;
   limit?: number;
 }): Promise<Product[]> {
+  noStore();
   const supabase = createSupabaseClient();
 
   let categoryId: string | undefined;
@@ -55,6 +58,7 @@ export async function getProducts(options?: {
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
+  noStore();
   const supabase = createSupabaseClient();
   const { data, error } = await supabase
     .from("products")
@@ -68,6 +72,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
+  noStore();
   const supabase = createSupabaseClient();
   const { data, error } = await supabase
     .from("categories")

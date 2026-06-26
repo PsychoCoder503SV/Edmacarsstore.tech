@@ -39,6 +39,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
     window.dispatchEvent(new CustomEvent("edmacars-cart-updated"));
   }, [items, ready]);
 
+  const cartItemIds = items.map((i) => i.id).join(",");
+
+  useEffect(() => {
+    if (!ready || !cartItemIds) return;
+
+    const controller = new AbortController();
+
+    fetch(`/api/products/stock?ids=${encodeURIComponent(cartItemIds)}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { stocks?: Record<string, number> } | null) => {
+        if (!data?.stocks) return;
+        setItems((prev) =>
+          prev
+            .map((item) => {
+              const fresh = data.stocks?.[item.id];
+              if (fresh === undefined) return item;
+              const stock = Math.max(0, fresh);
+              return {
+                ...item,
+                stock,
+                quantity: Math.min(item.quantity, stock),
+              };
+            })
+            .filter((item) => item.stock > 0 && item.quantity > 0)
+        );
+      })
+      .catch(() => undefined);
+
+    return () => controller.abort();
+  }, [ready, cartItemIds]);
+
   const addItem = useCallback((product: Product) => {
     if (product.stock <= 0) return false;
 

@@ -19,6 +19,8 @@ const bebas = Bebas_Neue({
   weight: "400",
 });
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Edmacars Store — Tecnología y Accesorios",
   description:

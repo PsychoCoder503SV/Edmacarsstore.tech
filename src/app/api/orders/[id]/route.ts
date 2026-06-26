@@ -2,7 +2,7 @@ import { verifyAdminRequest } from "@/lib/admin-auth";
 import { notifyOrderStatusChange, type OrderStatus } from "@/lib/order-status-notify";
 import { parseShippingAddress } from "@/lib/order-tracking";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
-import { applyStockDelta } from "@/lib/stock-sync";
+import { applyStockDelta, revalidateStockPaths } from "@/lib/stock-sync";
 import { NextResponse } from "next/server";
 
 const VALID_STATUSES: OrderStatus[] = [
@@ -15,19 +15,22 @@ const VALID_STATUSES: OrderStatus[] = [
 
 type RouteCtx = { params: Promise<{ id: string }> };
 
-async function restoreStockOnCancel(orderId: string): Promise<void> {
+async function restoreStockOnCancel(orderId: string): Promise<string[]> {
   const supabase = createSupabaseAdmin();
   const { data: items } = await supabase
     .from("order_items")
     .select("product_id, quantity")
     .eq("order_id", orderId);
 
-  if (!items?.length) return;
+  if (!items?.length) return [];
 
+  const slugs: string[] = [];
   for (const item of items) {
     if (!item.product_id) continue;
-    await applyStockDelta(supabase, item.product_id, item.quantity);
+    const result = await applyStockDelta(supabase, item.product_id, item.quantity);
+    if (result.slug) slugs.push(result.slug);
   }
+  return slugs;
 }
 
 export async function PATCH(request: Request, ctx: RouteCtx) {
@@ -70,7 +73,8 @@ export async function PATCH(request: Request, ctx: RouteCtx) {
     }
 
     if (status === "cancelled" && order.status !== "cancelled") {
-      await restoreStockOnCancel(id);
+      const slugs = await restoreStockOnCancel(id);
+      await revalidateStockPaths(slugs);
     }
 
     const meta = parseShippingAddress(order.shipping_address);

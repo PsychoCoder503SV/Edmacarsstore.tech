@@ -6,7 +6,7 @@ import {
   type PaymentMethod,
 } from "@/lib/checkout";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
-import { applyStockDelta } from "@/lib/stock-sync";
+import { applyStockDelta, revalidateStockPaths } from "@/lib/stock-sync";
 import { sendOrderConfirmationEmail } from "@/lib/order-email";
 import { notifyStoreTelegram } from "@/lib/telegram-server";
 import { NextResponse } from "next/server";
@@ -121,9 +121,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: itemsError.message }, { status: 500 });
     }
 
+    const slugsToRevalidate: string[] = [];
+    const stockRollbacks: { productId: string; quantity: number }[] = [];
+
     for (const item of items) {
-      await applyStockDelta(supabase, item.productId, -item.quantity);
+      const stockResult = await applyStockDelta(supabase, item.productId, -item.quantity);
+      if (!stockResult.ok) {
+        for (const rollback of stockRollbacks) {
+          await applyStockDelta(supabase, rollback.productId, rollback.quantity);
+        }
+        await supabase.from("order_items").delete().eq("order_id", order.id);
+        await supabase.from("orders").delete().eq("id", order.id);
+        return NextResponse.json(
+          { error: stockResult.error ?? "No se pudo actualizar el stock" },
+          { status: 500 }
+        );
+      }
+      stockRollbacks.push({ productId: item.productId, quantity: item.quantity });
+      if (stockResult.slug) slugsToRevalidate.push(stockResult.slug);
     }
+
+    await revalidateStockPaths(slugsToRevalidate);
 
     const message = formatOrderMessage(
       orderNumber,
