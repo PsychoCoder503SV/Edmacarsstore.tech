@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { CheckoutPaymentPanel } from "@/components/CheckoutPaymentPanel";
+import { PasswordResetFlow } from "@/components/PasswordResetFlow";
 import { useCart } from "@/components/CartProvider";
 import { useAuth } from "@/lib/auth";
 import { cartTotal } from "@/lib/cart";
@@ -61,8 +62,11 @@ export function CheckoutForm() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [useNewAddress, setUseNewAddress] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState<string | null>(null);
 
   const isLoggedIn = !!user;
+  const showCheckoutFlow = isLoggedIn || checkoutMode === "guest";
   const hasSavedAddress = !!(
     isLoggedIn &&
     profile?.default_address?.trim() &&
@@ -174,6 +178,8 @@ export function CheckoutForm() {
     }
     await refresh();
     setSubmitting(false);
+    setShowPasswordReset(false);
+    setLoginSuccess(null);
     setCheckoutMode("guest");
   }
 
@@ -230,7 +236,11 @@ export function CheckoutForm() {
           <div className="mt-3 flex rounded-xl border border-white/10 p-1">
             <button
               type="button"
-              onClick={() => setCheckoutMode("guest")}
+              onClick={() => {
+                setCheckoutMode("guest");
+                setShowPasswordReset(false);
+                setError(null);
+              }}
               className={`flex-1 rounded-lg py-2 text-sm transition ${
                 checkoutMode === "guest" ? "bg-neon-cyan/15 text-neon-cyan" : "text-zinc-400"
               }`}
@@ -239,7 +249,11 @@ export function CheckoutForm() {
             </button>
             <button
               type="button"
-              onClick={() => setCheckoutMode("account")}
+              onClick={() => {
+                setCheckoutMode("account");
+                setShowPasswordReset(false);
+                setError(null);
+              }}
               className={`flex-1 rounded-lg py-2 text-sm transition ${
                 checkoutMode === "account" ? "bg-neon-cyan/15 text-neon-cyan" : "text-zinc-400"
               }`}
@@ -247,38 +261,6 @@ export function CheckoutForm() {
               Ya tengo cuenta
             </button>
           </div>
-          {checkoutMode === "account" && (
-            <div className="mt-4 space-y-3">
-              <input
-                className="checkout-input"
-                type="email"
-                placeholder="Email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-              />
-              <input
-                className="checkout-input"
-                type="password"
-                placeholder="Contraseña"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-              />
-              <button
-                type="button"
-                className="btn-neon-outline w-full py-2.5 text-sm"
-                disabled={submitting}
-                onClick={handleQuickLogin}
-              >
-                Iniciar sesión y continuar
-              </button>
-              <p className="text-center text-xs text-zinc-500">
-                ¿No tienes cuenta?{" "}
-                <Link href="/cuenta/acceder" className="text-neon-cyan hover:text-white">
-                  Crear una
-                </Link>
-              </p>
-            </div>
-          )}
         </div>
       ) : (
         <div className="rounded-xl border border-neon-cyan/25 bg-neon-cyan/5 px-4 py-3 text-sm text-zinc-300">
@@ -290,6 +272,104 @@ export function CheckoutForm() {
         </div>
       )}
 
+      {!showCheckoutFlow ? (
+        <div className="mx-auto max-w-lg space-y-6">
+          <div className="rounded-2xl border border-glass glass-surface p-6">
+            <h2 className="text-lg font-semibold text-white">Inicia sesión para continuar</h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              Accede con tu cuenta y usaremos tus datos guardados para el pedido.
+            </p>
+
+            {showPasswordReset ? (
+              <div className="mt-5">
+                <PasswordResetFlow
+                  initialEmail={loginEmail}
+                  onBack={() => {
+                    setShowPasswordReset(false);
+                    setError(null);
+                  }}
+                  onSuccess={(message) => {
+                    setLoginSuccess(message);
+                    setShowPasswordReset(false);
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="mt-5 space-y-3">
+                {loginSuccess && <p className="text-sm text-neon-cyan">{loginSuccess}</p>}
+                <input
+                  className="checkout-input"
+                  type="email"
+                  placeholder="Email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                />
+                <input
+                  className="checkout-input"
+                  type="password"
+                  placeholder="Contraseña"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn-neon w-full py-2.5 text-sm"
+                  disabled={submitting}
+                  onClick={handleQuickLogin}
+                >
+                  {submitting ? "Ingresando…" : "Iniciar sesión y continuar"}
+                </button>
+                <button
+                  type="button"
+                  className="w-full text-center text-xs text-neon-cyan hover:text-white"
+                  onClick={() => {
+                    setShowPasswordReset(true);
+                    setError(null);
+                    setLoginSuccess(null);
+                  }}
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+                <p className="text-center text-xs text-zinc-500">
+                  ¿No tienes cuenta?{" "}
+                  <Link href="/cuenta/acceder" className="text-neon-cyan hover:text-white">
+                    Crear una
+                  </Link>
+                  {" · "}
+                  <button
+                    type="button"
+                    className="text-neon-cyan hover:text-white"
+                    onClick={() => {
+                      setCheckoutMode("guest");
+                      setError(null);
+                    }}
+                  >
+                    Comprar como invitado
+                  </button>
+                </p>
+              </div>
+            )}
+
+            {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+          </div>
+
+          <div className="rounded-xl border border-glass glass-surface-elevated p-5">
+            <p className="text-sm text-zinc-400">Tu carrito</p>
+            <ul className="mt-3 space-y-2 text-sm text-zinc-300">
+              {items.map((i) => (
+                <li key={i.id} className="flex justify-between gap-2">
+                  <span className="truncate">{i.name} x{i.quantity}</span>
+                  <span>${(i.price * i.quantity).toFixed(2)}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 flex justify-between border-t border-white/10 pt-4">
+              <span className="font-medium text-white">Total</span>
+              <span className="text-lg font-bold text-neon-cyan">${total.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      ) : (
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="order-2 space-y-6 lg:order-1">
           <div>
@@ -445,12 +525,12 @@ export function CheckoutForm() {
             initialPayment={preferredPayment}
             error={error}
             submitting={submitting}
-            confirmDisabled={!isLoggedIn && checkoutMode === "account"}
+            confirmDisabled={false}
             onConfirm={handleConfirm}
-            accountGateHint={!isLoggedIn && checkoutMode === "account"}
           />
         </div>
       </div>
+      )}
     </div>
   );
 }

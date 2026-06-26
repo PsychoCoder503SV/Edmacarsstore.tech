@@ -1,3 +1,4 @@
+import { findUserByEmail } from "@/lib/auth-admin";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { validateEmail, validateFullName, validatePassword } from "@/lib/validation";
 import { NextResponse } from "next/server";
@@ -23,18 +24,6 @@ type ShippingRecord = {
   order_number?: string;
   track_token?: string;
 };
-
-async function findUserByEmail(supabase: ReturnType<typeof createSupabaseAdmin>, email: string) {
-  const normalized = email.toLowerCase();
-  for (let page = 1; page <= 5; page++) {
-    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
-    if (error) break;
-    const user = data.users.find((u) => u.email?.toLowerCase() === normalized);
-    if (user) return user;
-    if (data.users.length < 200) break;
-  }
-  return null;
-}
 
 function buildProfilePayload(userId: string, body: RegisterBody) {
   return {
@@ -115,7 +104,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: createErr.message }, { status: 400 });
       }
 
-      const existing = await findUserByEmail(supabase, email);
+      const existing = await findUserByEmail(email);
       if (!existing) {
         return NextResponse.json(
           { error: "already_registered", message: "Este email ya tiene cuenta" },

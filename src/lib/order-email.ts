@@ -407,6 +407,26 @@ async function dispatchEmail(
   return false;
 }
 
+export async function dispatchTransactionalEmail(params: {
+  to: string;
+  toName: string;
+  subject: string;
+  html: string;
+}): Promise<boolean> {
+  const sender = resolveSender();
+  if (!sender) {
+    console.error("[order-email] falta EMAIL_FROM_ADDRESS o SMTP_USER");
+    return false;
+  }
+
+  try {
+    return dispatchEmail(sender, params.to.trim(), params.toName, params.subject, params.html);
+  } catch (err) {
+    console.error("[order-email] transactional send failed", err);
+    return false;
+  }
+}
+
 export async function sendOrderStatusEmail(params: StatusEmailParams): Promise<boolean> {
   const sender = resolveSender();
   if (!sender) {
