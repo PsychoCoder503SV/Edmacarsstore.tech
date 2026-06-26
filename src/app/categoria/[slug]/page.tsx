@@ -1,7 +1,6 @@
 import { CategoryIconDisplay } from "@/components/CategoryIconDisplay";
 import { ProductCard } from "@/components/ProductCard";
 import { getCategoryBySlug, getProducts } from "@/lib/store";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -19,8 +18,7 @@ export default async function CategoriaPage({ params }: PageProps) {
   return (
     <main className="flex-1">
       <section className="relative overflow-hidden border-b border-white/5">
-        <Image src="/fondoweb.webp" alt="" fill className="object-cover opacity-25" sizes="100vw" />
-        <div className="hero-edmacars-overlay absolute inset-0" />
+        <div className="hero-edmacars-overlay absolute inset-0 pointer-events-none opacity-80" />
         <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <Link href="/" className="text-xs text-neon-cyan transition hover:text-white">
             ← Inicio

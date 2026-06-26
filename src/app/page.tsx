@@ -2,7 +2,6 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { CategoryCard } from "@/components/CategoryCard";
 import { ProductCard } from "@/components/ProductCard";
 import { getCategories, getProducts, getProductsByCategory } from "@/lib/store";
-import Image from "next/image";
 import Link from "next/link";
 
 export default async function Home() {
@@ -17,16 +16,8 @@ export default async function Home() {
   return (
     <main className="flex-1">
       <section className="hero-edmacars relative isolate min-h-[calc(100dvh-4rem)] overflow-hidden border-b border-white/5">
-        <Image
-          src="/fondoweb.webp"
-          alt=""
-          fill
-          className="object-cover opacity-45"
-          priority
-          sizes="100vw"
-        />
-        <div className="hero-edmacars-overlay absolute inset-0" />
-        <div className="cyber-grid absolute inset-0 opacity-30" />
+        <div className="hero-edmacars-overlay absolute inset-0 pointer-events-none" />
+        <div className="cyber-grid absolute inset-0 opacity-30 pointer-events-none" />
 
         <div className="relative flex min-h-[calc(100dvh-4rem)] flex-col items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
           <div className="mx-auto w-full max-w-3xl text-center">
@@ -71,7 +62,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="todos-los-productos" className="border-t border-white/5 bg-surface/40 py-16">
+      <section id="todos-los-productos" className="border-t border-white/5 bg-background/90 py-16 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between gap-4">
             <div>
@@ -96,7 +87,7 @@ export default async function Home() {
       </section>
 
       {categories.length > 0 && (
-        <section id="categorias" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <section id="categorias" className="mx-auto max-w-7xl bg-background/90 px-4 py-16 backdrop-blur-sm sm:px-6 lg:px-8">
           <div>
             <h2 className="text-2xl font-semibold text-white">Categorías</h2>
             <p className="mt-1 text-sm text-zinc-500">Explora por tipo de producto</p>

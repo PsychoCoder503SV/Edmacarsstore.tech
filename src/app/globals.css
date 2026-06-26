@@ -31,13 +31,37 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-outfit), system-ui, sans-serif;
-  background-image:
-    linear-gradient(180deg, rgba(7, 7, 15, 0.82) 0%, rgba(7, 7, 15, 0.92) 100%),
-    url("/fondoweb.webp");
-  background-size: cover;
-  background-position: center top;
-  background-attachment: fixed;
   min-height: 100vh;
+  position: relative;
+  isolation: isolate;
+}
+
+/* Un solo fondo fijo: imagen centrada en proporción, sin repetir */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-color: var(--background);
+  background-image: url("/fondoweb.webp");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: contain;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(7, 7, 15, 0.55) 0%,
+    rgba(7, 7, 15, 0.82) 45%,
+    rgba(7, 7, 15, 0.94) 100%
+  );
 }
 
 .font-brand {
@@ -45,9 +69,11 @@ body {
 }
 
 .hero-edmacars-overlay {
-  background:
-    linear-gradient(180deg, rgba(7, 7, 15, 0.55) 0%, rgba(7, 7, 15, 0.88) 70%, rgba(7, 7, 15, 1) 100%),
-    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0, 245, 255, 0.12), transparent);
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 40%,
+    rgba(0, 245, 255, 0.1),
+    transparent 70%
+  );
 }
 
 /* Grid ciberpunk de fondo */
