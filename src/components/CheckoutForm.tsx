@@ -14,7 +14,7 @@ import {
   type CheckoutCustomer,
   type PaymentMethod,
 } from "@/lib/checkout";
-import { registerAndSignIn, signInCustomer } from "@/lib/auth-client";
+import { signInCustomer } from "@/lib/auth-client";
 import { createSupabaseClient } from "@/lib/supabase";
 import {
   hasFieldErrors,
@@ -55,8 +55,6 @@ export function CheckoutForm() {
   const [lng, setLng] = useState(-88.91);
   const [preferredPayment, setPreferredPayment] = useState<PaymentMethod>("contra_entrega");
   const [mobileMapOpen, setMobileMapOpen] = useState(false);
-  const [createAccount, setCreateAccount] = useState(false);
-  const [password, setPassword] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -133,8 +131,8 @@ export function CheckoutForm() {
       phone,
       email,
       address,
-      password,
-      createAccount: !isLoggedIn && checkoutMode === "guest" && createAccount,
+      password: "",
+      createAccount: false,
     });
   }
 
@@ -159,41 +157,6 @@ export function CheckoutForm() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error ?? "No se pudo registrar el pedido");
     return data;
-  }
-
-  async function maybeCreateAccount(): Promise<{
-    userId: string | null;
-    accountWarning: string | null;
-    accountSuccess: string | null;
-  }> {
-    if (isLoggedIn) return { userId: user.id, accountWarning: null, accountSuccess: null };
-    if (checkoutMode !== "guest" || !createAccount) {
-      return { userId: null, accountWarning: null, accountSuccess: null };
-    }
-
-    const result = await registerAndSignIn(supabase, {
-      email: email.trim(),
-      password,
-      fullName: fullName.trim(),
-      phone: customer().phone,
-    });
-
-    if (result.signedIn) {
-      await refresh();
-      return {
-        userId: result.userId,
-        accountWarning: null,
-        accountSuccess: result.message ?? "Cuenta activa — ya iniciaste sesión.",
-      };
-    }
-
-    return {
-      userId: null,
-      accountWarning:
-        result.message ??
-        "Tu pedido se guardará como invitado. Puedes crear tu cuenta después en Acceder.",
-      accountSuccess: null,
-    };
   }
 
   async function handleQuickLogin() {
@@ -233,11 +196,11 @@ export function CheckoutForm() {
 
     try {
       const num = generateOrderNumber();
-      const { userId, accountWarning, accountSuccess } = await maybeCreateAccount();
-      const orderRes = await saveOrder(num, payment, userId);
+      const orderRes = await saveOrder(num, payment, isLoggedIn ? user.id : null);
 
       saveOrderConfirmation({
         orderNumber: num,
+        orderId: orderRes.orderId,
         trackToken: orderRes.trackToken,
         paymentMethod: payment,
         customer: customer(),
@@ -248,8 +211,7 @@ export function CheckoutForm() {
         })),
         total,
         createdAt: new Date().toISOString(),
-        accountWarning: accountWarning ?? undefined,
-        accountSuccess: accountSuccess ?? undefined,
+        wasGuest: !isLoggedIn,
       });
 
       clearCart();
@@ -486,21 +448,6 @@ export function CheckoutForm() {
             confirmDisabled={!isLoggedIn && checkoutMode === "account"}
             onConfirm={handleConfirm}
             accountGateHint={!isLoggedIn && checkoutMode === "account"}
-            showCreateAccount={!isLoggedIn && checkoutMode === "guest"}
-            createAccount={createAccount}
-            onCreateAccountChange={(checked) => {
-              setCreateAccount(checked);
-              if (!checked) {
-                setPassword("");
-                setFieldErrors((prev) => ({ ...prev, password: undefined }));
-              }
-            }}
-            password={password}
-            onPasswordChange={setPassword}
-            passwordFieldError={fieldErrors.password}
-            onClearPasswordError={() =>
-              setFieldErrors((prev) => ({ ...prev, password: undefined }))
-            }
           />
         </div>
       </div>

@@ -3,21 +3,12 @@
 import { memo, useCallback, useState } from "react";
 import type { CartItem } from "@/lib/cart";
 import { BANK_DETAILS, PAYMENT_LABELS, type PaymentMethod } from "@/lib/checkout";
-import { getPasswordRules } from "@/lib/validation";
 
 const PAYMENT_OPTIONS: { id: PaymentMethod; enabled: boolean; hint?: string }[] = [
   { id: "contra_entrega", enabled: true },
   { id: "transferencia", enabled: true },
   { id: "paypal", enabled: false, hint: "Próximamente" },
   { id: "tarjeta", enabled: false, hint: "Próximamente" },
-];
-
-const PASSWORD_RULE_LABELS: { key: keyof ReturnType<typeof getPasswordRules>; label: string }[] = [
-  { key: "minLength", label: "Mínimo 8 caracteres" },
-  { key: "uppercase", label: "Una mayúscula" },
-  { key: "lowercase", label: "Una minúscula" },
-  { key: "number", label: "Un número" },
-  { key: "special", label: "Un signo (!@#$%…)" },
 ];
 
 type Props = {
@@ -29,18 +20,7 @@ type Props = {
   confirmDisabled: boolean;
   onConfirm: (payment: PaymentMethod) => void;
   accountGateHint?: boolean;
-  showCreateAccount?: boolean;
-  createAccount?: boolean;
-  onCreateAccountChange?: (checked: boolean) => void;
-  password?: string;
-  onPasswordChange?: (value: string) => void;
-  passwordFieldError?: string;
-  onClearPasswordError?: () => void;
 };
-
-function inputClass(hasError?: string) {
-  return `checkout-input${hasError ? " checkout-input-error" : ""}`;
-}
 
 function CheckoutPaymentPanelInner({
   items,
@@ -51,21 +31,12 @@ function CheckoutPaymentPanelInner({
   confirmDisabled,
   onConfirm,
   accountGateHint,
-  showCreateAccount = false,
-  createAccount = false,
-  onCreateAccountChange,
-  password = "",
-  onPasswordChange,
-  passwordFieldError,
-  onClearPasswordError,
 }: Props) {
   const [payment, setPayment] = useState<PaymentMethod>(
     initialPayment === "transferencia" || initialPayment === "contra_entrega"
       ? initialPayment
       : "contra_entrega"
   );
-
-  const passwordRules = getPasswordRules(password);
 
   const selectPayment = useCallback((id: PaymentMethod) => {
     if (!PAYMENT_OPTIONS.find((p) => p.id === id)?.enabled) return;
@@ -150,51 +121,6 @@ function CheckoutPaymentPanelInner({
           <span className="text-xl font-bold text-neon-cyan">${total.toFixed(2)}</span>
         </div>
       </div>
-
-      {showCreateAccount && (
-        <div className="space-y-3">
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 p-4">
-            <input
-              type="checkbox"
-              checked={createAccount}
-              onChange={(e) => onCreateAccountChange?.(e.target.checked)}
-              className="mt-1"
-            />
-            <span>
-              <span className="block text-sm font-medium text-zinc-200">Crear cuenta al confirmar</span>
-              <span className="text-xs text-zinc-500">
-                Opcional — guarda tu historial y datos para próximas compras
-              </span>
-            </span>
-          </label>
-
-          {createAccount && (
-            <div className="space-y-3 rounded-xl border border-neon-cyan/20 bg-neon-cyan/5 p-4">
-              <p className="text-sm font-medium text-zinc-200">Contraseña de tu cuenta</p>
-              <input
-                className={inputClass(passwordFieldError)}
-                type="password"
-                placeholder="Contraseña *"
-                value={password}
-                onChange={(e) => {
-                  onPasswordChange?.(e.target.value);
-                  onClearPasswordError?.();
-                }}
-                autoComplete="new-password"
-                aria-invalid={!!passwordFieldError}
-              />
-              {passwordFieldError && <p className="text-xs text-red-400">{passwordFieldError}</p>}
-              <ul className="grid gap-1 text-xs sm:grid-cols-2">
-                {PASSWORD_RULE_LABELS.map(({ key, label }) => (
-                  <li key={key} className={passwordRules[key] ? "text-neon-cyan" : "text-zinc-500"}>
-                    {passwordRules[key] ? "✓" : "○"} {label}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 

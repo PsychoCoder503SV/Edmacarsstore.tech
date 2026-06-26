@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { PostOrderAccountOffer } from "@/components/PostOrderAccountOffer";
 import {
   BANK_DETAILS,
   PAYMENT_LABELS,
   buildMapUrl,
   loadOrderConfirmation,
+  saveOrderConfirmation,
   type OrderConfirmationData,
-  type PaymentMethod,
 } from "@/lib/checkout";
 import { buildWhatsAppProofUrl, formatWhatsAppProofMessage } from "@/lib/whatsapp-client";
 
@@ -21,6 +22,16 @@ function ConfirmadoContent() {
   useEffect(() => {
     setData(loadOrderConfirmation(orden));
   }, [orden]);
+
+  const handleAccountCreated = useCallback(
+    (message: string) => {
+      if (!data) return;
+      const updated = { ...data, accountSuccess: message, wasGuest: false };
+      saveOrderConfirmation(updated);
+      setData(updated);
+    },
+    [data]
+  );
 
   if (!data) {
     return (
@@ -50,36 +61,54 @@ function ConfirmadoContent() {
         <h1 className="mt-3 font-brand text-3xl text-white">
           PEDIDO <span className="text-neon-cyan">CONFIRMADO</span>
         </h1>
-        <p className="mt-2 text-sm text-zinc-400">
-          Tu orden <span className="font-mono text-neon-cyan">{data.orderNumber}</span> fue registrada
-        </p>
+        <p className="mt-3 font-mono text-lg text-neon-cyan">{data.orderNumber}</p>
         <p className="mt-2 text-xs text-zinc-500">
-          Enviamos la confirmación a <span className="text-zinc-300">{data.customer.email}</span>
+          Confirmación enviada a <span className="text-zinc-300">{data.customer.email}</span>
         </p>
       </div>
 
-      {data.accountSuccess && (
-        <div className="mt-6 rounded-xl border border-neon-cyan/30 bg-neon-cyan/10 p-4 text-sm text-neon-cyan">
-          {data.accountSuccess} Puedes ver tus pedidos en Mi cuenta.
-        </div>
-      )}
-
-      {data.accountWarning && (
-        <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
-          {data.accountWarning}
-        </div>
-      )}
-
-      <div className="mt-6 space-y-4 rounded-2xl border border-glass glass-surface-elevated p-6">
-        <div className="flex justify-between border-b border-white/10 pb-4">
+      <div className="mt-6 space-y-5 rounded-2xl border border-glass glass-surface-elevated p-6">
+        <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
           <div>
             <p className="text-xs uppercase tracking-wide text-zinc-500">Método de pago</p>
-            <p className="mt-1 text-sm text-white">{PAYMENT_LABELS[data.paymentMethod]}</p>
+            <p className="mt-1 text-sm font-medium text-white">{PAYMENT_LABELS[data.paymentMethod]}</p>
           </div>
           <div className="text-right">
             <p className="text-xs uppercase tracking-wide text-zinc-500">Total</p>
-            <p className="mt-1 text-xl font-bold text-neon-cyan">${data.total.toFixed(2)}</p>
+            <p className="mt-1 text-2xl font-bold text-neon-cyan">${data.total.toFixed(2)}</p>
           </div>
+        </div>
+
+        <div>
+          <p className="text-xs uppercase tracking-wide text-zinc-500">Dirección de entrega</p>
+          <p className="mt-1 text-sm text-zinc-200">{data.customer.address}</p>
+          {data.customer.notes && (
+            <p className="mt-1 text-xs text-zinc-500">Referencias: {data.customer.notes}</p>
+          )}
+          <a
+            href={buildMapUrl(data.customer.lat, data.customer.lng)}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-block text-xs text-neon-cyan hover:text-white"
+          >
+            Ver ubicación en mapa →
+          </a>
+        </div>
+
+        <div>
+          <p className="text-xs uppercase tracking-wide text-zinc-500">Productos</p>
+          <ul className="mt-3 space-y-2 text-sm text-zinc-300">
+            {data.items.map((item, i) => (
+              <li key={i} className="flex justify-between gap-3 border-b border-white/5 pb-2 last:border-0 last:pb-0">
+                <span>
+                  {item.name} <span className="text-zinc-500">×{item.quantity}</span>
+                </span>
+                <span className="shrink-0 font-medium text-white">
+                  ${(item.unitPrice * item.quantity).toFixed(2)}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
 
         {isTransfer && (
@@ -93,33 +122,6 @@ function ConfirmadoContent() {
             </ul>
           </div>
         )}
-
-        <div>
-          <p className="text-xs uppercase tracking-wide text-zinc-500">Entrega</p>
-          <p className="mt-1 text-sm text-zinc-200">{data.customer.address}</p>
-          {data.customer.notes && (
-            <p className="mt-1 text-xs text-zinc-500">Ref: {data.customer.notes}</p>
-          )}
-          <a
-            href={buildMapUrl(data.customer.lat, data.customer.lng)}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-2 inline-block text-xs text-neon-cyan hover:text-white"
-          >
-            Ver ubicación en mapa →
-          </a>
-        </div>
-
-        <ul className="space-y-2 border-t border-white/10 pt-4 text-sm text-zinc-300">
-          {data.items.map((item, i) => (
-            <li key={i} className="flex justify-between gap-3">
-              <span>
-                {item.name} ×{item.quantity}
-              </span>
-              <span>${(item.unitPrice * item.quantity).toFixed(2)}</span>
-            </li>
-          ))}
-        </ul>
       </div>
 
       {waUrl && (
@@ -144,11 +146,19 @@ function ConfirmadoContent() {
         </div>
       )}
 
+      {data.accountSuccess && (
+        <div className="mt-6 rounded-xl border border-neon-cyan/30 bg-neon-cyan/10 p-4 text-sm text-neon-cyan">
+          {data.accountSuccess}
+        </div>
+      )}
+
+      <PostOrderAccountOffer data={data} onAccountCreated={handleAccountCreated} />
+
       <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-zinc-400">
         <p className="font-medium text-zinc-200">Seguimiento de tu pedido</p>
         <p className="mt-1 text-xs">
-          Guarda tu número <span className="font-mono text-neon-cyan">{data.orderNumber}</span> y el
-          email del pedido para consultar el estado cuando quieras.
+          Guarda tu número <span className="font-mono text-neon-cyan">{data.orderNumber}</span> y el email del
+          pedido para consultar el estado cuando quieras.
         </p>
         <Link
           href={

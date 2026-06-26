@@ -23,9 +23,23 @@ export function friendlyAuthError(message: string): string {
   return message;
 }
 
+export type RegisterInput = {
+  email: string;
+  password: string;
+  fullName: string;
+  phone?: string;
+  defaultAddress?: string;
+  defaultLat?: number;
+  defaultLng?: number;
+  addressNotes?: string;
+  preferredPayment?: string;
+  orderId?: string;
+  trackToken?: string;
+};
+
 export async function registerAndSignIn(
   supabase: SupabaseClient,
-  input: { email: string; password: string; fullName: string; phone?: string }
+  input: RegisterInput
 ): Promise<RegisterAndSignInResult> {
   const res = await fetch("/api/auth/register", {
     method: "POST",
@@ -35,6 +49,13 @@ export async function registerAndSignIn(
       password: input.password,
       fullName: input.fullName.trim(),
       phone: input.phone?.trim(),
+      defaultAddress: input.defaultAddress?.trim(),
+      defaultLat: input.defaultLat,
+      defaultLng: input.defaultLng,
+      addressNotes: input.addressNotes?.trim(),
+      preferredPayment: input.preferredPayment,
+      orderId: input.orderId,
+      trackToken: input.trackToken,
     }),
   });
 

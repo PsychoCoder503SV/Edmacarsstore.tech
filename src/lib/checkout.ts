@@ -28,6 +28,7 @@ export type CheckoutCustomer = {
 
 export type OrderConfirmationData = {
   orderNumber: string;
+  orderId?: string;
   paymentMethod: PaymentMethod;
   customer: CheckoutCustomer;
   items: { name: string; quantity: number; unitPrice: number }[];
@@ -36,6 +37,8 @@ export type OrderConfirmationData = {
   accountWarning?: string;
   accountSuccess?: string;
   trackToken?: string;
+  /** Pedido hecho sin sesión — ofrecer cuenta después en confirmación */
+  wasGuest?: boolean;
 };
 
 export const ORDER_CONFIRM_STORAGE_KEY = "edmacars_order_confirm";
