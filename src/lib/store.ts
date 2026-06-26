@@ -3,19 +3,36 @@ import { createSupabaseClient } from "@/lib/supabase";
 import type { Category, Product } from "@/lib/database.types";
 import { productImages } from "@/lib/images";
 
-export async function getCategories(): Promise<Category[]> {
-  noStore();
-  const supabase = createSupabaseClient();
-  const { data, error } = await supabase
+async function fetchCategoriesFromDb(supabase: ReturnType<typeof createSupabaseClient>): Promise<Category[]> {
+  const withIcon = await supabase
     .from("categories")
     .select("id, name, slug, description, icon_url")
     .order("name");
 
-  if (error) {
-    console.error("getCategories:", error.message);
+  if (!withIcon.error) {
+    return (withIcon.data ?? []) as Category[];
+  }
+
+  const fallback = await supabase
+    .from("categories")
+    .select("id, name, slug, description")
+    .order("name");
+
+  if (fallback.error) {
+    console.error("getCategories:", fallback.error.message);
     return [];
   }
-  return data ?? [];
+
+  return (fallback.data ?? []).map((row) => ({
+    ...row,
+    icon_url: null,
+  })) as Category[];
+}
+
+export async function getCategories(): Promise<Category[]> {
+  noStore();
+  const supabase = createSupabaseClient();
+  return fetchCategoriesFromDb(supabase);
 }
 
 export async function getProducts(options?: {
@@ -73,14 +90,8 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
   noStore();
-  const supabase = createSupabaseClient();
-  const { data, error } = await supabase
-    .from("categories")
-    .select("id, name, slug, description, icon_url")
-    .eq("slug", slug)
-    .maybeSingle();
-  if (error || !data) return null;
-  return data;
+  const categories = await getCategories();
+  return categories.find((c) => c.slug === slug) ?? null;
 }
 
 export type CategoryWithProducts = Category & { products: Product[] };

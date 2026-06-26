@@ -36,31 +36,37 @@ body {
   isolation: isolate;
 }
 
-/* Un solo fondo fijo: imagen centrada en proporción, sin repetir */
-body::before {
-  content: "";
+/* Carro: ancho max-w-2xl (42rem), completo, fijo, un poco a la izquierda del centro */
+.site-bg-car {
   position: fixed;
-  inset: 0;
   z-index: -2;
+  top: 46%;
+  left: calc(50% - 14px);
+  transform: translate(-50%, -50%);
+  width: min(42rem, 92vw);
   pointer-events: none;
-  background-color: var(--background);
-  background-image: url("/fondoweb.webp");
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: contain;
 }
 
-body::after {
-  content: "";
+.site-bg-car-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(58vh, 480px);
+  object-fit: contain;
+  object-position: center center;
+  opacity: 0.52;
+}
+
+.site-bg-dim {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
   background: linear-gradient(
     180deg,
-    rgba(7, 7, 15, 0.55) 0%,
-    rgba(7, 7, 15, 0.82) 45%,
-    rgba(7, 7, 15, 0.94) 100%
+    rgba(7, 7, 15, 0.45) 0%,
+    rgba(7, 7, 15, 0.78) 50%,
+    rgba(7, 7, 15, 0.93) 100%
   );
 }
 

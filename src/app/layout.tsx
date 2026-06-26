@@ -5,6 +5,7 @@ import { CartProvider } from "@/components/CartProvider";
 import { SupportChat } from "@/components/SupportChat";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { SiteBackground } from "@/components/SiteBackground";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -35,6 +36,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${outfit.variable} ${bebas.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
+        <SiteBackground />
         <AuthProvider>
           <CartProvider>
             <Header />

@@ -62,7 +62,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="todos-los-productos" className="border-t border-white/5 bg-background/90 py-16 backdrop-blur-sm">
+      <section id="todos-los-productos" className="border-t border-white/5 bg-surface/50 py-16 backdrop-blur-[2px]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between gap-4">
             <div>
@@ -86,13 +86,15 @@ export default async function Home() {
         </div>
       </section>
 
-      {categories.length > 0 && (
-        <section id="categorias" className="mx-auto max-w-7xl bg-background/90 px-4 py-16 backdrop-blur-sm sm:px-6 lg:px-8">
-          <div>
-            <h2 className="text-2xl font-semibold text-white">Categorías</h2>
-            <p className="mt-1 text-sm text-zinc-500">Explora por tipo de producto</p>
-          </div>
+      <section id="categorias" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div>
+          <h2 className="text-2xl font-semibold text-white">Categorías</h2>
+          <p className="mt-1 text-sm text-zinc-500">Explora por tipo de producto</p>
+        </div>
 
+        {categories.length === 0 ? (
+          <p className="mt-10 text-center text-sm text-zinc-500">Aún no hay categorías publicadas.</p>
+        ) : (
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {categories.map((category) => (
               <CategoryCard
@@ -104,8 +106,8 @@ export default async function Home() {
               />
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
     </main>
   );
 }
