@@ -1,17 +1,30 @@
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 
+function bearerToken(request: Request): string | null {
+  const auth = request.headers.get("Authorization");
+  if (!auth?.startsWith("Bearer ")) return null;
+  return auth.slice(7).trim();
+}
+
 export async function verifyAdminRequest(request: Request): Promise<{ ok: boolean; userId?: string }> {
-  const secret = process.env.ADMIN_API_SECRET?.trim();
+  const adminSecret = process.env.ADMIN_API_SECRET?.trim();
   const headerKey = request.headers.get("x-admin-key")?.trim();
-  if (secret && headerKey && headerKey === secret) {
+  if (adminSecret && headerKey && headerKey === adminSecret) {
     return { ok: true };
   }
 
-  const auth = request.headers.get("Authorization");
-  if (!auth?.startsWith("Bearer ")) return { ok: false };
+  const token = bearerToken(request);
+  if (!token) return { ok: false };
 
-  const token = auth.slice(7).trim();
+  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (serviceRole && token === serviceRole) {
+    return { ok: true };
+  }
+
+  if (adminSecret && token === adminSecret) {
+    return { ok: true };
+  }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
   if (!url || !anon || !token) return { ok: false };
