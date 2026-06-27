@@ -18,6 +18,13 @@ import {
 import { signInCustomer } from "@/lib/auth-client";
 import { createSupabaseClient } from "@/lib/supabase";
 import {
+  DEFAULT_DELIVERY_LAT,
+  DEFAULT_DELIVERY_LNG,
+  isDefaultCoords,
+  loadDeliveryLocationCache,
+  saveDeliveryLocationCache,
+} from "@/lib/delivery-location-cache";
+import {
   hasFieldErrors,
   normalizeSvPhone,
   validateCheckoutFields,
@@ -52,8 +59,8 @@ export function CheckoutForm() {
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
-  const [lat, setLat] = useState(13.798);
-  const [lng, setLng] = useState(-88.91);
+  const [lat, setLat] = useState(DEFAULT_DELIVERY_LAT);
+  const [lng, setLng] = useState(DEFAULT_DELIVERY_LNG);
   const [preferredPayment, setPreferredPayment] = useState<PaymentMethod>("contra_entrega");
   const [mobileMapOpen, setMobileMapOpen] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
@@ -74,6 +81,26 @@ export function CheckoutForm() {
     profile.default_lng != null
   );
   const showSavedAddressCard = hasSavedAddress && !useNewAddress;
+  const guestLocationCache = !isLoggedIn ? loadDeliveryLocationCache() : null;
+  const mapPreferSavedLocation =
+    !useNewAddress &&
+    (hasSavedAddress ||
+      Boolean(
+        guestLocationCache?.mapOnboardingDone &&
+          !isDefaultCoords(guestLocationCache.lat, guestLocationCache.lng)
+      ));
+
+  useEffect(() => {
+    if (user) return;
+    const cache = loadDeliveryLocationCache();
+    if (!cache) return;
+    if (cache.mapOnboardingDone && !isDefaultCoords(cache.lat, cache.lng)) {
+      setLat(cache.lat);
+      setLng(cache.lng);
+    }
+    if (cache.address) setAddress(cache.address);
+    if (cache.notes) setNotes(cache.notes);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -89,8 +116,30 @@ export function CheckoutForm() {
     }
     if (profile?.default_address?.trim() && profile.default_lat != null && profile.default_lng != null) {
       setUseNewAddress(false);
+      saveDeliveryLocationCache({
+        lat: profile.default_lat,
+        lng: profile.default_lng,
+        address: profile.default_address,
+        notes: profile.address_notes ?? undefined,
+        mapOnboardingDone: true,
+      });
     }
   }, [user, profile]);
+
+  useEffect(() => {
+    if (isLoggedIn || showSavedAddressCard) return;
+    const timer = window.setTimeout(() => {
+      saveDeliveryLocationCache({
+        lat,
+        lng,
+        address,
+        notes,
+        mapOnboardingDone:
+          loadDeliveryLocationCache()?.mapOnboardingDone ?? !isDefaultCoords(lat, lng),
+      });
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [lat, lng, address, notes, isLoggedIn, showSavedAddressCard]);
 
   const handleMapChange = useCallback((a: number, b: number) => {
     setLat(a);
@@ -101,8 +150,8 @@ export function CheckoutForm() {
     setUseNewAddress(true);
     setAddress("");
     setNotes("");
-    setLat(13.798);
-    setLng(-88.91);
+    setLat(DEFAULT_DELIVERY_LAT);
+    setLng(DEFAULT_DELIVERY_LNG);
     setFieldErrors((prev) => ({ ...prev, address: undefined }));
   }, []);
 
@@ -489,12 +538,22 @@ export function CheckoutForm() {
               <div>
                 <p className="mb-2 text-sm font-medium text-zinc-300">Ubicación en mapa</p>
                 <div className="hidden lg:block">
-                  <DeliveryMap lat={lat} lng={lng} onChange={handleMapChange} />
+                  <DeliveryMap
+                    lat={lat}
+                    lng={lng}
+                    onChange={handleMapChange}
+                    preferSavedLocation={mapPreferSavedLocation}
+                  />
                 </div>
                 <div className="lg:hidden">
                   {mobileMapOpen ? (
                     <>
-                      <DeliveryMap lat={lat} lng={lng} onChange={handleMapChange} />
+                      <DeliveryMap
+                    lat={lat}
+                    lng={lng}
+                    onChange={handleMapChange}
+                    preferSavedLocation={mapPreferSavedLocation}
+                  />
                       <button
                         type="button"
                         className="mt-2 text-xs text-zinc-500 underline decoration-zinc-600 underline-offset-2"

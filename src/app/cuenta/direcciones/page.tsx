@@ -5,6 +5,11 @@ import { useEffect, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { buildMapUrl } from "@/lib/checkout";
+import {
+  DEFAULT_DELIVERY_LAT,
+  DEFAULT_DELIVERY_LNG,
+  saveDeliveryLocationCache,
+} from "@/lib/delivery-location-cache";
 
 const DeliveryMap = dynamic(() => import("@/components/DeliveryMap"), { ssr: false });
 
@@ -14,8 +19,9 @@ export default function DireccionesPage() {
 
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
-  const [lat, setLat] = useState(13.798);
-  const [lng, setLng] = useState(-88.91);
+  const [lat, setLat] = useState(DEFAULT_DELIVERY_LAT);
+  const [lng, setLng] = useState(DEFAULT_DELIVERY_LNG);
+  const hasSavedMapLocation = profile?.default_lat != null && profile?.default_lng != null;
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -47,6 +53,13 @@ export default function DireccionesPage() {
       return;
     }
     await refresh();
+    saveDeliveryLocationCache({
+      lat,
+      lng,
+      address: address.trim(),
+      notes: notes.trim(),
+      mapOnboardingDone: true,
+    });
     setMessage("Dirección guardada");
   }
 
@@ -65,7 +78,15 @@ export default function DireccionesPage() {
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
       />
-      <DeliveryMap lat={lat} lng={lng} onChange={(a, b) => { setLat(a); setLng(b); }} />
+      <DeliveryMap
+        lat={lat}
+        lng={lng}
+        onChange={(a, b) => {
+          setLat(a);
+          setLng(b);
+        }}
+        preferSavedLocation={hasSavedMapLocation}
+      />
       <p className="text-xs text-zinc-500">
         <a href={buildMapUrl(lat, lng)} target="_blank" rel="noreferrer" className="text-neon-cyan">
           Ver en mapa
