@@ -1,4 +1,5 @@
 import type { CartItem } from "@/lib/cart";
+import { isDefaultCoords } from "@/lib/delivery-location-cache";
 
 export type PaymentMethod = "contra_entrega" | "transferencia" | "paypal" | "tarjeta";
 
@@ -22,9 +23,18 @@ export type CheckoutCustomer = {
   email: string;
   address: string;
   notes?: string;
-  lat: number;
-  lng: number;
+  /** Solo si el cliente marcó pin en el mapa; null = solo dirección escrita */
+  lat: number | null;
+  lng: number | null;
 };
+
+export function hasDeliveryCoordinates(
+  lat: number | null | undefined,
+  lng: number | null | undefined
+): boolean {
+  if (lat == null || lng == null) return false;
+  return !isDefaultCoords(lat, lng);
+}
 
 export type OrderConfirmationData = {
   orderNumber: string;
@@ -108,7 +118,9 @@ export function formatTelegramOrderMessage(
     `<b>📍 Entrega</b>`,
     escapeHtml(customer.address),
     customer.notes ? `📝 ${escapeHtml(customer.notes)}` : "",
-    `🗺 <a href="${buildMapUrl(customer.lat, customer.lng)}">Ver ubicación en mapa</a>`,
+    hasDeliveryCoordinates(customer.lat, customer.lng)
+      ? `🗺 <a href="${buildMapUrl(customer.lat!, customer.lng!)}">Ver ubicación en mapa</a>`
+      : "",
     ``,
     `<b>🛍 Productos (${items.length})</b>`,
     ...lines,
@@ -136,7 +148,7 @@ export function buildShippingRecord(
   customer: CheckoutCustomer,
   trackToken?: string
 ): string {
-  return JSON.stringify({
+  const record: Record<string, unknown> = {
     order_number: orderNumber,
     track_token: trackToken,
     payment_method: payment,
@@ -147,6 +159,9 @@ export function buildShippingRecord(
     notes: customer.notes ?? "",
     lat: customer.lat,
     lng: customer.lng,
-    map_url: buildMapUrl(customer.lat, customer.lng),
-  });
+  };
+  if (hasDeliveryCoordinates(customer.lat, customer.lng)) {
+    record.map_url = buildMapUrl(customer.lat!, customer.lng!);
+  }
+  return JSON.stringify(record);
 }

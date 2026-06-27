@@ -1,5 +1,5 @@
 import type { CheckoutCustomer, PaymentMethod } from "@/lib/checkout";
-import { BANK_DETAILS, PAYMENT_LABELS, buildMapUrl } from "@/lib/checkout";
+import { BANK_DETAILS, PAYMENT_LABELS, buildMapUrl, hasDeliveryCoordinates } from "@/lib/checkout";
 
 export function whatsAppNumber(): string | null {
   const raw = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "";
@@ -50,7 +50,9 @@ export function formatWhatsAppProofMessage(
     "📍 *ENTREGA*",
     customer.address,
     customer.notes ? `Ref: ${customer.notes}` : "",
-    `🗺 ${buildMapUrl(customer.lat, customer.lng)}`,
+    hasDeliveryCoordinates(customer.lat, customer.lng)
+      ? `🗺 ${buildMapUrl(customer.lat!, customer.lng!)}`
+      : "",
     "",
     "🛍 *PRODUCTOS*",
     ...lines,

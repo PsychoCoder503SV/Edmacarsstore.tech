@@ -8,6 +8,7 @@ import {
   BANK_DETAILS,
   PAYMENT_LABELS,
   buildMapUrl,
+  hasDeliveryCoordinates,
   loadOrderConfirmation,
   saveOrderConfirmation,
   type OrderConfirmationData,
@@ -85,14 +86,16 @@ function ConfirmadoContent() {
           {data.customer.notes && (
             <p className="mt-1 text-xs text-zinc-500">Referencias: {data.customer.notes}</p>
           )}
-          <a
-            href={buildMapUrl(data.customer.lat, data.customer.lng)}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-2 inline-block text-xs text-neon-cyan hover:text-white"
-          >
-            Ver ubicación en mapa →
-          </a>
+          {hasDeliveryCoordinates(data.customer.lat, data.customer.lng) && (
+            <a
+              href={buildMapUrl(data.customer.lat!, data.customer.lng!)}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-block text-xs text-neon-cyan hover:text-white"
+            >
+              Ver ubicación en mapa →
+            </a>
+          )}
         </div>
 
         <div>
@@ -132,7 +135,7 @@ function ConfirmadoContent() {
           <p className="mt-2 text-xs text-zinc-400">
             {isTransfer
               ? "Abre WhatsApp, adjunta la captura del comprobante y envía el mensaje con todos los detalles de tu pedido."
-              : "Envía el detalle de tu pedido con ubicación para coordinar la entrega en efectivo."}
+              : "Envía el detalle de tu pedido para coordinar la entrega en efectivo."}
           </p>
           <a
             href={waUrl}

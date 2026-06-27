@@ -16,7 +16,7 @@ const WELCOME =
 
 export function SupportChat() {
   const pathname = usePathname();
-  const hideFab = pathname === "/checkout";
+  const hideFab = pathname === "/checkout" || pathname.startsWith("/cuenta");
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);

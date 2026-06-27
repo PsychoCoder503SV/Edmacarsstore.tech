@@ -41,12 +41,11 @@ export async function POST(request: Request) {
     const lng = typeof body.lng === "number" ? body.lng : null;
     const address = body.address?.trim() ?? "";
 
-    if (!address || lat == null || lng == null || isDefaultCoords(lat, lng)) {
-      return NextResponse.json(
-        { error: "Ubicación incompleta. Marca un punto en el mapa y escribe la dirección." },
-        { status: 400 }
-      );
+    if (!address) {
+      return NextResponse.json({ error: "Escribe la dirección antes de guardar." }, { status: 400 });
     }
+
+    const hasCoords = lat != null && lng != null && !isDefaultCoords(lat, lng);
 
     const admin = createSupabaseAdmin();
     const { error } = await admin.from("profiles").upsert(
@@ -55,8 +54,8 @@ export async function POST(request: Request) {
         full_name: body.fullName?.trim() || user.user_metadata?.full_name || null,
         phone: body.phone?.trim() || null,
         default_address: address,
-        default_lat: lat,
-        default_lng: lng,
+        default_lat: hasCoords ? lat : null,
+        default_lng: hasCoords ? lng : null,
         address_notes: body.notes?.trim() || null,
         preferred_payment: body.preferredPayment?.trim() || null,
         role: "customer",

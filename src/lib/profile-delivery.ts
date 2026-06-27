@@ -9,8 +9,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export type ProfileDeliveryInput = {
   address: string;
   notes?: string;
-  lat: number;
-  lng: number;
+  lat?: number | null;
+  lng?: number | null;
   fullName?: string;
   phone?: string;
   preferredPayment?: string;
@@ -40,13 +40,17 @@ export async function saveProfileDeliveryLocation(
   const data = await res.json();
   if (!res.ok) return { ok: false, error: data.error ?? "No se pudo guardar" };
 
-  saveDeliveryLocationCache({
-    lat: input.lat,
-    lng: input.lng,
-    address: input.address,
-    notes: input.notes,
-    mapOnboardingDone: true,
-  });
+  const hasCoords =
+    input.lat != null && input.lng != null && !isDefaultCoords(input.lat, input.lng);
+  if (hasCoords) {
+    saveDeliveryLocationCache({
+      lat: input.lat!,
+      lng: input.lng!,
+      address: input.address,
+      notes: input.notes,
+      mapOnboardingDone: true,
+    });
+  }
 
   return { ok: true };
 }

@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { buildMapUrl } from "@/lib/checkout";
+import { buildMapUrl, hasDeliveryCoordinates } from "@/lib/checkout";
 import {
   DEFAULT_DELIVERY_LAT,
   DEFAULT_DELIVERY_LNG,
@@ -34,7 +34,8 @@ export default function DireccionesPage() {
   const [notes, setNotes] = useState("");
   const [lat, setLat] = useState(DEFAULT_DELIVERY_LAT);
   const [lng, setLng] = useState(DEFAULT_DELIVERY_LNG);
-  const [mapMounted, setMapMounted] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [locationPinSet, setLocationPinSet] = useState(false);
   const [preferSavedLocation, setPreferSavedLocation] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -46,20 +47,22 @@ export default function DireccionesPage() {
 
     const profileLat = profile?.default_lat;
     const profileLng = profile?.default_lng;
-    const hasCoords = profileLat != null && profileLng != null;
+    const hasCoords =
+      profileLat != null && profileLng != null && !isDefaultCoords(profileLat, profileLng);
 
     setAddress(profile?.default_address ?? "");
     setNotes(profile?.address_notes ?? "");
     setLat(hasCoords ? toCoord(profileLat, DEFAULT_DELIVERY_LAT) : DEFAULT_DELIVERY_LAT);
     setLng(hasCoords ? toCoord(profileLng, DEFAULT_DELIVERY_LNG) : DEFAULT_DELIVERY_LNG);
+    setLocationPinSet(hasCoords);
     setPreferSavedLocation(hasCoords);
-    setMapMounted(true);
     hydratedRef.current = true;
   }, [loading, user, profile]);
 
   const handleMapChange = useCallback((a: number, b: number) => {
     setLat(a);
     setLng(b);
+    setLocationPinSet(true);
   }, []);
 
   async function handleSave(e: React.FormEvent) {
@@ -70,19 +73,17 @@ export default function DireccionesPage() {
       setMessage("Escribe la dirección antes de guardar");
       return;
     }
-    if (isDefaultCoords(lat, lng)) {
-      setMessage("Marca tu ubicación en el mapa antes de guardar");
-      return;
-    }
 
     setSaving(true);
     setMessage(null);
 
+    const pinActive = locationPinSet && !isDefaultCoords(lat, lng);
+
     const result = await saveProfileDeliveryLocation(supabase, {
       address: address.trim(),
       notes: notes.trim() || undefined,
-      lat,
-      lng,
+      lat: pinActive ? lat : null,
+      lng: pinActive ? lng : null,
       fullName: profile?.full_name ?? undefined,
       phone: profile?.phone ?? undefined,
       preferredPayment: profile?.preferred_payment ?? undefined,
@@ -95,11 +96,11 @@ export default function DireccionesPage() {
     }
 
     await refresh();
-    setPreferSavedLocation(true);
+    if (pinActive) setPreferSavedLocation(true);
     setMessage("Dirección guardada en tu cuenta");
   }
 
-  if (loading || !mapMounted) {
+  if (loading || !hydratedRef.current) {
     return (
       <div className="rounded-2xl border border-glass glass-surface p-6 text-sm text-zinc-500">
         Cargando tu dirección…
@@ -107,11 +108,14 @@ export default function DireccionesPage() {
     );
   }
 
+  const showMapLink = hasDeliveryCoordinates(lat, lng) && locationPinSet;
+
   return (
     <form onSubmit={handleSave} className="space-y-4 rounded-2xl border border-glass glass-surface p-6">
       <h2 className="text-lg font-semibold text-white">Dirección de entrega</h2>
       <p className="text-xs text-zinc-500">
-        Ajusta el pin en el mapa y pulsa guardar. La ubicación queda asignada a tu cuenta.
+        Guarda tu dirección escrita. El pin en el mapa es opcional — úsalo solo si quieres una entrega más
+        precisa.
       </p>
       <textarea
         className="checkout-input min-h-20"
@@ -125,18 +129,50 @@ export default function DireccionesPage() {
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
       />
-      <DeliveryMap
-        key={`direcciones-map-${user?.id ?? "anon"}`}
-        lat={lat}
-        lng={lng}
-        onChange={handleMapChange}
-        preferSavedLocation={preferSavedLocation}
-      />
-      <p className="text-xs text-zinc-500">
-        <a href={buildMapUrl(lat, lng)} target="_blank" rel="noreferrer" className="text-neon-cyan">
-          Ver en mapa
-        </a>
-      </p>
+
+      <div>
+        <p className="mb-2 text-sm font-medium text-zinc-300">
+          Pin en mapa <span className="font-normal text-zinc-500">(opcional)</span>
+        </p>
+        {mapOpen ? (
+          <>
+            <DeliveryMap
+              key={`direcciones-map-${user?.id ?? "anon"}`}
+              lat={lat}
+              lng={lng}
+              onChange={handleMapChange}
+              preferSavedLocation={preferSavedLocation}
+            />
+            <button
+              type="button"
+              className="mt-2 text-xs text-zinc-500 underline decoration-zinc-600 underline-offset-2"
+              onClick={() => setMapOpen(false)}
+            >
+              Ocultar mapa
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="btn-neon-outline w-full py-3 text-sm touch-manipulation"
+            onClick={() => setMapOpen(true)}
+          >
+            Agregar pin en mapa (opcional)
+          </button>
+        )}
+        {showMapLink && !mapOpen && (
+          <p className="mt-2 text-xs text-neon-cyan">Tienes un pin guardado en tu cuenta.</p>
+        )}
+      </div>
+
+      {showMapLink && (
+        <p className="text-xs text-zinc-500">
+          <a href={buildMapUrl(lat, lng)} target="_blank" rel="noreferrer" className="text-neon-cyan">
+            Ver pin en mapa
+          </a>
+        </p>
+      )}
+
       {message && (
         <p className={`text-sm ${message.includes("guardad") ? "text-neon-cyan" : "text-red-400"}`}>
           {message}

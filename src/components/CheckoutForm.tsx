@@ -24,7 +24,7 @@ import {
   loadDeliveryLocationCache,
   saveDeliveryLocationCache,
 } from "@/lib/delivery-location-cache";
-import { saveProfileDeliveryLocation, syncBrowserCacheToProfile } from "@/lib/profile-delivery";
+import { syncBrowserCacheToProfile } from "@/lib/profile-delivery";
 import {
   hasFieldErrors,
   normalizeSvPhone,
@@ -63,7 +63,8 @@ export function CheckoutForm() {
   const [lat, setLat] = useState(DEFAULT_DELIVERY_LAT);
   const [lng, setLng] = useState(DEFAULT_DELIVERY_LNG);
   const [preferredPayment, setPreferredPayment] = useState<PaymentMethod>("contra_entrega");
-  const [mobileMapOpen, setMobileMapOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [locationPinSet, setLocationPinSet] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -76,17 +77,16 @@ export function CheckoutForm() {
 
   const isLoggedIn = !!user;
   const showCheckoutFlow = isLoggedIn || checkoutMode === "guest";
-  const hasSavedAddress = !!(
-    isLoggedIn &&
-    profile?.default_address?.trim() &&
-    profile.default_lat != null &&
-    profile.default_lng != null
-  );
+  const hasSavedAddress = !!(isLoggedIn && profile?.default_address?.trim());
+  const savedAddressHasPin =
+    profile?.default_lat != null &&
+    profile?.default_lng != null &&
+    !isDefaultCoords(profile.default_lat, profile.default_lng);
   const showSavedAddressCard = hasSavedAddress && !useNewAddress;
   const guestLocationCache = !isLoggedIn ? loadDeliveryLocationCache() : null;
   const mapPreferSavedLocation =
     !useNewAddress &&
-    (hasSavedAddress ||
+    (savedAddressHasPin ||
       Boolean(
         guestLocationCache?.mapOnboardingDone &&
           !isDefaultCoords(guestLocationCache.lat, guestLocationCache.lng)
@@ -99,6 +99,7 @@ export function CheckoutForm() {
     if (cache.mapOnboardingDone && !isDefaultCoords(cache.lat, cache.lng)) {
       setLat(cache.lat);
       setLng(cache.lng);
+      setLocationPinSet(true);
     }
     if (cache.address) setAddress(cache.address);
     if (cache.notes) setNotes(cache.notes);
@@ -113,20 +114,23 @@ export function CheckoutForm() {
     setNotes(profile?.address_notes ?? "");
     if (profile?.default_lat != null) setLat(profile.default_lat);
     if (profile?.default_lng != null) setLng(profile.default_lng);
+    if (savedAddressHasPin) setLocationPinSet(true);
     if (profile?.preferred_payment === "transferencia" || profile?.preferred_payment === "contra_entrega") {
       setPreferredPayment(profile.preferred_payment);
     }
-    if (profile?.default_address?.trim() && profile.default_lat != null && profile.default_lng != null) {
+    if (profile?.default_address?.trim()) {
       setUseNewAddress(false);
-      saveDeliveryLocationCache({
-        lat: profile.default_lat,
-        lng: profile.default_lng,
-        address: profile.default_address,
-        notes: profile.address_notes ?? undefined,
-        mapOnboardingDone: true,
-      });
+      if (savedAddressHasPin) {
+        saveDeliveryLocationCache({
+          lat: profile.default_lat!,
+          lng: profile.default_lng!,
+          address: profile.default_address,
+          notes: profile.address_notes ?? undefined,
+          mapOnboardingDone: true,
+        });
+      }
     }
-  }, [user, profile]);
+  }, [user, profile, savedAddressHasPin]);
 
   useEffect(() => {
     if (!user?.id) {
@@ -157,48 +161,16 @@ export function CheckoutForm() {
         address,
         notes,
         mapOnboardingDone:
-          loadDeliveryLocationCache()?.mapOnboardingDone ?? !isDefaultCoords(lat, lng),
+          loadDeliveryLocationCache()?.mapOnboardingDone ?? locationPinSet,
       });
     }, 500);
     return () => window.clearTimeout(timer);
-  }, [lat, lng, address, notes, isLoggedIn, showSavedAddressCard]);
-
-  useEffect(() => {
-    if (!isLoggedIn || showSavedAddressCard || !address.trim() || isDefaultCoords(lat, lng)) return;
-
-    const timer = window.setTimeout(() => {
-      const normalized = normalizeSvPhone(phone.trim());
-      void saveProfileDeliveryLocation(supabase, {
-        address: address.trim(),
-        notes: notes.trim() || undefined,
-        lat,
-        lng,
-        fullName: fullName.trim(),
-        phone: normalized ? `+503${normalized}` : phone.trim() || undefined,
-        preferredPayment,
-      }).then((result) => {
-        if (result.ok) void refresh();
-      });
-    }, 900);
-
-    return () => window.clearTimeout(timer);
-  }, [
-    isLoggedIn,
-    showSavedAddressCard,
-    address,
-    notes,
-    lat,
-    lng,
-    fullName,
-    phone,
-    preferredPayment,
-    supabase,
-    refresh,
-  ]);
+  }, [lat, lng, address, notes, isLoggedIn, showSavedAddressCard, locationPinSet]);
 
   const handleMapChange = useCallback((a: number, b: number) => {
     setLat(a);
     setLng(b);
+    setLocationPinSet(true);
   }, []);
 
   const handleUseNewAddress = useCallback(() => {
@@ -207,6 +179,8 @@ export function CheckoutForm() {
     setNotes("");
     setLat(DEFAULT_DELIVERY_LAT);
     setLng(DEFAULT_DELIVERY_LNG);
+    setLocationPinSet(false);
+    setMapOpen(false);
     setFieldErrors((prev) => ({ ...prev, address: undefined }));
   }, []);
 
@@ -217,19 +191,31 @@ export function CheckoutForm() {
     setNotes(profile.address_notes ?? "");
     if (profile.default_lat != null) setLat(profile.default_lat);
     if (profile.default_lng != null) setLng(profile.default_lng);
+    setLocationPinSet(savedAddressHasPin);
     setFieldErrors((prev) => ({ ...prev, address: undefined }));
-  }, [profile]);
+  }, [profile, savedAddressHasPin]);
 
   const customer = (): CheckoutCustomer => {
     const normalized = normalizeSvPhone(phone.trim());
+    let orderLat: number | null = null;
+    let orderLng: number | null = null;
+
+    if (showSavedAddressCard && savedAddressHasPin && profile) {
+      orderLat = profile.default_lat;
+      orderLng = profile.default_lng;
+    } else if (locationPinSet && !isDefaultCoords(lat, lng)) {
+      orderLat = lat;
+      orderLng = lng;
+    }
+
     return {
       fullName: fullName.trim(),
       phone: normalized ? `+503${normalized}` : phone.trim(),
       email: email.trim(),
       address: address.trim(),
       notes: notes.trim() || undefined,
-      lat,
-      lng,
+      lat: orderLat,
+      lng: orderLng,
     };
   };
 
@@ -591,42 +577,38 @@ export function CheckoutForm() {
               />
 
               <div>
-                <p className="mb-2 text-sm font-medium text-zinc-300">Ubicación en mapa</p>
-                <div className="hidden lg:block">
-                  <DeliveryMap
-                    lat={lat}
-                    lng={lng}
-                    onChange={handleMapChange}
-                    preferSavedLocation={mapPreferSavedLocation}
-                  />
-                </div>
-                <div className="lg:hidden">
-                  {mobileMapOpen ? (
-                    <>
-                      <DeliveryMap
-                    lat={lat}
-                    lng={lng}
-                    onChange={handleMapChange}
-                    preferSavedLocation={mapPreferSavedLocation}
-                  />
-                      <button
-                        type="button"
-                        className="mt-2 text-xs text-zinc-500 underline decoration-zinc-600 underline-offset-2"
-                        onClick={() => setMobileMapOpen(false)}
-                      >
-                        Ocultar mapa
-                      </button>
-                    </>
-                  ) : (
+                <p className="mb-2 text-sm font-medium text-zinc-300">
+                  Ubicación en mapa{" "}
+                  <span className="font-normal text-zinc-500">(opcional — para entrega más precisa)</span>
+                </p>
+                {mapOpen ? (
+                  <>
+                    <DeliveryMap
+                      lat={lat}
+                      lng={lng}
+                      onChange={handleMapChange}
+                      preferSavedLocation={mapPreferSavedLocation}
+                    />
                     <button
                       type="button"
-                      className="btn-neon-outline w-full py-3 text-sm touch-manipulation"
-                      onClick={() => setMobileMapOpen(true)}
+                      className="mt-2 text-xs text-zinc-500 underline decoration-zinc-600 underline-offset-2"
+                      onClick={() => setMapOpen(false)}
                     >
-                      Abrir mapa de entrega (opcional)
+                      Ocultar mapa
                     </button>
-                  )}
-                </div>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-neon-outline w-full py-3 text-sm touch-manipulation"
+                    onClick={() => setMapOpen(true)}
+                  >
+                    Marcar ubicación en mapa (opcional)
+                  </button>
+                )}
+                {locationPinSet && !isDefaultCoords(lat, lng) && !mapOpen && (
+                  <p className="mt-2 text-xs text-neon-cyan">Pin de entrega guardado para este pedido.</p>
+                )}
               </div>
             </>
           )}

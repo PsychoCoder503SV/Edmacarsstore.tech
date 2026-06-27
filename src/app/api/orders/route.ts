@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import {
   buildShippingRecord,
   formatOrderMessage,
+  hasDeliveryCoordinates,
   type CheckoutCustomer,
   type PaymentMethod,
 } from "@/lib/checkout";
@@ -39,20 +40,21 @@ async function resolveOrderUserId(
   const id = typeof userId === "string" ? userId.trim() : "";
   if (!id || !UUID_RE.test(id)) return null;
 
-  const { error } = await supabase.from("profiles").upsert(
-    {
-      id,
-      full_name: customer.fullName,
-      phone: customer.phone,
-      default_address: customer.address,
-      default_lat: customer.lat,
-      default_lng: customer.lng,
-      address_notes: customer.notes ?? "",
-      preferred_payment: paymentMethod,
-      role: "customer",
-    },
-    { onConflict: "id" }
-  );
+  const profilePatch: Record<string, unknown> = {
+    id,
+    full_name: customer.fullName,
+    phone: customer.phone,
+    default_address: customer.address,
+    address_notes: customer.notes ?? "",
+    preferred_payment: paymentMethod,
+    role: "customer",
+  };
+  if (hasDeliveryCoordinates(customer.lat, customer.lng)) {
+    profilePatch.default_lat = customer.lat;
+    profilePatch.default_lng = customer.lng;
+  }
+
+  const { error } = await supabase.from("profiles").upsert(profilePatch, { onConflict: "id" });
 
   return error ? null : id;
 }
