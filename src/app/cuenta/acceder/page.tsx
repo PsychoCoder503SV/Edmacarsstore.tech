@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PasswordField } from "@/components/PasswordField";
 import { PasswordResetFlow } from "@/components/PasswordResetFlow";
 import { registerAndSignIn, signInCustomer } from "@/lib/auth-client";
@@ -14,8 +14,8 @@ type Mode = "login" | "register";
 
 export default function AccederPage() {
   const router = useRouter();
-  const { user, refresh } = useAuth();
-  const supabase = createSupabaseClient();
+  const { user } = useAuth();
+  const supabase = useMemo(() => createSupabaseClient(), []);
 
   const [mode, setMode] = useState<Mode>("login");
   const [showPasswordReset, setShowPasswordReset] = useState(false);
@@ -36,11 +36,13 @@ export default function AccederPage() {
     setSuccess(null);
     setSubmitting(true);
 
+    let navigated = false;
+
     try {
       if (mode === "login") {
         const { ok, message } = await signInCustomer(supabase, email, password);
         if (!ok) throw new Error(message ?? "No se pudo iniciar sesión");
-        await refresh();
+        navigated = true;
         router.replace("/cuenta");
         return;
       }
@@ -67,12 +69,13 @@ export default function AccederPage() {
         throw new Error(result.message ?? "No se pudo crear la cuenta");
       }
 
-      await refresh();
       setSuccess(result.message ?? "Cuenta lista. Redirigiendo…");
+      navigated = true;
       router.replace("/cuenta");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al acceder");
-      setSubmitting(false);
+    } finally {
+      if (!navigated) setSubmitting(false);
     }
   }
 

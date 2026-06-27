@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CheckoutPaymentPanel } from "@/components/CheckoutPaymentPanel";
 import { PasswordField } from "@/components/PasswordField";
 import { PasswordResetFlow } from "@/components/PasswordResetFlow";
@@ -53,7 +53,7 @@ export function CheckoutForm() {
   const { items, clearCart } = useCart();
   const { user, profile, refresh } = useAuth();
   const total = cartTotal(items);
-  const supabase = createSupabaseClient();
+  const supabase = useMemo(() => createSupabaseClient(), []);
 
   const [checkoutMode, setCheckoutMode] = useState<CheckoutMode>("guest");
   const [fullName, setFullName] = useState("");
@@ -267,7 +267,6 @@ export function CheckoutForm() {
       setSubmitting(false);
       return;
     }
-    await refresh();
     setSubmitting(false);
     setShowPasswordReset(false);
     setLoginSuccess(null);

@@ -22,7 +22,7 @@ export default function CuentaLayout({ children }: { children: React.ReactNode }
     return <>{children}</>;
   }
 
-  if (loading || !user) {
+  if (loading) {
     return (
       <main className="flex-1">
         <section className="mx-auto max-w-6xl px-4 py-16 text-center text-sm text-zinc-500">
@@ -30,6 +30,10 @@ export default function CuentaLayout({ children }: { children: React.ReactNode }
         </section>
       </main>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
