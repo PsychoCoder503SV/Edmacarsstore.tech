@@ -59,16 +59,17 @@ export function ConfirmadoContent({ whatsappDigits }: Props) {
     );
   }
 
-  const waMessage = formatWhatsAppProofMessage(
-    data.orderNumber,
-    data.paymentMethod,
-    data.customer,
-    data.items,
-    data.total
-  );
-  const waUrl = buildWhatsAppProofUrl(waMessage, whatsappDigits);
   const isTransfer = data.paymentMethod === "transferencia";
-  const showWhatsAppSection = isTransfer || Boolean(waUrl);
+  const waMessage = isTransfer
+    ? formatWhatsAppProofMessage(
+        data.orderNumber,
+        data.paymentMethod,
+        data.customer,
+        data.items,
+        data.total
+      )
+    : "";
+  const waUrl = isTransfer ? buildWhatsAppProofUrl(waMessage, whatsappDigits) : null;
 
   return (
     <section className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
@@ -142,15 +143,12 @@ export function ConfirmadoContent({ whatsappDigits }: Props) {
         )}
       </div>
 
-      {showWhatsAppSection && (
+      {isTransfer && (
         <div className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-6">
-          <p className="text-sm font-medium text-white">
-            {isTransfer ? "Siguiente paso: envía tu comprobante" : "Confirma tu pedido por WhatsApp"}
-          </p>
+          <p className="text-sm font-medium text-white">Siguiente paso: envía tu comprobante</p>
           <p className="mt-2 text-xs text-zinc-400">
-            {isTransfer
-              ? "Abre WhatsApp, adjunta la captura del comprobante y envía el mensaje con todos los detalles de tu pedido."
-              : "Envía el detalle de tu pedido para coordinar la entrega en efectivo."}
+            Abre WhatsApp, adjunta la captura del comprobante y envía el mensaje con todos los detalles de
+            tu pedido.
           </p>
           {waUrl ? (
             <a
@@ -160,7 +158,7 @@ export function ConfirmadoContent({ whatsappDigits }: Props) {
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-3.5 text-sm font-semibold text-white transition hover:brightness-110"
             >
               <WhatsAppIcon />
-              {isTransfer ? "Enviar comprobante por WhatsApp" : "Enviar confirmación por WhatsApp"}
+              Enviar comprobante por WhatsApp
             </a>
           ) : (
             <p className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-100">
