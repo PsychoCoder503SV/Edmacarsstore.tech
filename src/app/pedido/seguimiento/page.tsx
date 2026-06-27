@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { PAYMENT_LABELS, type PaymentMethod } from "@/lib/checkout";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { OrderStatusBar } from "@/components/OrderStatusBar";
 import { ORDER_STATUS_LABELS } from "@/lib/order-tracking";
 
@@ -91,14 +92,10 @@ function SeguimientoContent() {
         SEGUIMIENTO <span className="text-neon-cyan">DE PEDIDO</span>
       </h1>
       <p className="mt-2 text-sm text-zinc-500">
-        {hasSecureLink
-          ? "Cargando tu pedido desde el enlace del correo…"
-          : "Consulta con número de orden y email del pedido"}
+        Revisa el estado y el detalle de tu compra en Edmacars Store.
       </p>
 
-      {loading && hasSecureLink && !order && !error && (
-        <p className="mt-6 text-sm text-zinc-400">Buscando tu pedido…</p>
-      )}
+      {loading && !order && !error && <LoadingIndicator className="mt-4" />}
 
       {!hasSecureLink && (
         <form
@@ -212,8 +209,8 @@ export default function SeguimientoPedidoPage() {
     <main className="flex-1">
       <Suspense
         fallback={
-          <section className="mx-auto max-w-2xl px-4 py-16 text-center text-sm text-zinc-500">
-            Cargando…
+          <section className="mx-auto max-w-2xl px-4 py-16">
+            <LoadingIndicator />
           </section>
         }
       >

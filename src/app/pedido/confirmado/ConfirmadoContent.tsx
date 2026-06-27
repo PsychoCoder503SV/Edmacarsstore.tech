@@ -42,7 +42,16 @@ export function ConfirmadoContent({ whatsappDigits }: Props) {
   if (!data) {
     return (
       <section className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6">
-        <p className="text-zinc-400">No hay datos del pedido en esta sesión.</p>
+        <p className="text-zinc-400">
+          No encontramos la confirmación de este pedido. Revisa el email de tu compra o consulta el
+          seguimiento con tu número de orden.
+        </p>
+        <Link
+          href="/pedido/seguimiento"
+          className="btn-neon-outline mt-4 inline-block px-6 py-2.5 text-sm"
+        >
+          Consultar seguimiento
+        </Link>
         <Link href="/catalogo" className="btn-neon mt-6 inline-block px-6 py-2.5 text-sm">
           Ir al catálogo
         </Link>
@@ -166,9 +175,9 @@ export function ConfirmadoContent({ whatsappDigits }: Props) {
                 </>
               ) : (
                 <>
-                  El botón de WhatsApp no está configurado en el servidor. Guarda tu orden{" "}
-                  <span className="font-mono text-neon-cyan">{data.orderNumber}</span> y envía el comprobante por
-                  el canal de soporte de Edmacars.
+                  Guarda tu número de orden{" "}
+                  <span className="font-mono text-neon-cyan">{data.orderNumber}</span> y contáctanos por
+                  WhatsApp o el asistente de la tienda para enviar tu comprobante.
                 </>
               )}
             </p>

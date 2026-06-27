@@ -109,7 +109,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "No encontramos un pedido con esos datos. Revisa el enlace del correo o contáctanos por WhatsApp.",
+            "No encontramos un pedido con esos datos. Verifica el número de orden y el email, o contáctanos por WhatsApp.",
         },
         { status: 404 }
       );

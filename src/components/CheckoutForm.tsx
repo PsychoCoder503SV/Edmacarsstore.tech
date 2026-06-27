@@ -36,8 +36,8 @@ import {
 const DeliveryMap = dynamic(() => import("@/components/DeliveryMap"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-40 items-center justify-center rounded-2xl border border-neon-cyan/20 bg-surface text-xs text-zinc-500">
-      Cargando mapa…
+    <div className="flex h-40 items-center justify-center rounded-2xl border border-neon-cyan/20 bg-surface">
+      <span className="h-6 w-6 animate-spin rounded-full border-2 border-neon-cyan/25 border-t-neon-cyan" />
     </div>
   ),
 });
@@ -335,7 +335,7 @@ export function CheckoutForm() {
                 checkoutMode === "guest" ? "bg-neon-cyan/15 text-neon-cyan" : "text-zinc-400"
               }`}
             >
-              Invitado (guest)
+              Sin cuenta
             </button>
             <button
               type="button"

@@ -98,8 +98,8 @@ export async function registerAndSignIn(
     signedIn: true,
     created: Boolean(data.created ?? data.ok),
     message: data.created
-      ? "Cuenta creada y sesión iniciada."
-      : "Sesión iniciada con tu cuenta.",
+      ? "Cuenta creada. Ya puedes comprar con tus datos guardados."
+      : "Listo. Ya puedes usar tu cuenta.",
   };
 }
 

@@ -10,13 +10,14 @@ import {
   DEFAULT_DELIVERY_LNG,
   isDefaultCoords,
 } from "@/lib/delivery-location-cache";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { saveProfileDeliveryLocation } from "@/lib/profile-delivery";
 
 const DeliveryMap = dynamic(() => import("@/components/DeliveryMap"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-40 items-center justify-center rounded-2xl border border-neon-cyan/20 bg-surface text-xs text-zinc-500">
-      Cargando mapa…
+    <div className="flex h-40 items-center justify-center rounded-2xl border border-neon-cyan/20 bg-surface">
+      <span className="h-6 w-6 animate-spin rounded-full border-2 border-neon-cyan/25 border-t-neon-cyan" />
     </div>
   ),
 });
@@ -102,8 +103,8 @@ export default function DireccionesPage() {
 
   if (loading || !hydratedRef.current) {
     return (
-      <div className="rounded-2xl border border-glass glass-surface p-6 text-sm text-zinc-500">
-        Cargando tu dirección…
+      <div className="rounded-2xl border border-glass glass-surface p-6">
+        <LoadingIndicator size="sm" />
       </div>
     );
   }

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { ConfirmadoContent } from "@/app/pedido/confirmado/ConfirmadoContent";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { resolveWhatsAppDigits } from "@/lib/whatsapp-config";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +12,8 @@ export default function PedidoConfirmadoPage() {
     <main className="flex-1">
       <Suspense
         fallback={
-          <section className="mx-auto max-w-2xl px-4 py-16 text-center text-sm text-zinc-500">
-            Cargando confirmación…
+          <section className="mx-auto max-w-2xl px-4 py-16">
+            <LoadingIndicator />
           </section>
         }
       >

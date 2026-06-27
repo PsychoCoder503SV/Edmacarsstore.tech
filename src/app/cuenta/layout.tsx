@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { AccountNav } from "@/components/AccountNav";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { useAuth } from "@/lib/auth";
 
 export default function CuentaLayout({ children }: { children: React.ReactNode }) {
@@ -25,8 +26,8 @@ export default function CuentaLayout({ children }: { children: React.ReactNode }
   if (loading) {
     return (
       <main className="flex-1">
-        <section className="mx-auto max-w-6xl px-4 py-16 text-center text-sm text-zinc-500">
-          Cargando cuenta…
+        <section className="mx-auto max-w-6xl px-4 py-16">
+          <LoadingIndicator />
         </section>
       </main>
     );

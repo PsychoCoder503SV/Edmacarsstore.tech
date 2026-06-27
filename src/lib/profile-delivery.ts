@@ -26,7 +26,7 @@ export async function saveProfileDeliveryLocation(
   input: ProfileDeliveryInput
 ): Promise<{ ok: boolean; error?: string }> {
   const token = await getAccessToken(supabase);
-  if (!token) return { ok: false, error: "Sin sesión" };
+  if (!token) return { ok: false, error: "Inicia sesión para guardar tu dirección." };
 
   const res = await fetch("/api/account/delivery-location", {
     method: "POST",

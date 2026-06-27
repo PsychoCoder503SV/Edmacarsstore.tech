@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { OrderStatusBar } from "@/components/OrderStatusBar";
 import { useAuth } from "@/lib/auth";
 import { createSupabaseClient } from "@/lib/supabase";
@@ -86,15 +87,13 @@ export default function MisPedidosPage() {
   return (
     <div>
       <h2 className="text-lg font-semibold text-white">Historial de pedidos</h2>
-      <p className="mt-1 text-xs text-zinc-500">
-        Solo pedidos vinculados a <span className="text-zinc-300">{user?.email}</span>
-      </p>
+      <p className="mt-1 text-xs text-zinc-500">Tus compras en Edmacars Store</p>
       {loading ? (
-        <p className="mt-6 text-sm text-zinc-500">Cargando…</p>
+        <LoadingIndicator className="mt-2" />
       ) : orders.length === 0 ? (
         <p className="mt-6 text-sm text-zinc-500">
-          Aún no tienes pedidos con esta cuenta. Si compraste como invitado, créala desde la confirmación del
-          pedido con el mismo email.
+          Aún no hay pedidos en tu cuenta. Cuando compres con el mismo email, aparecerán aquí
+          automáticamente.
         </p>
       ) : (
         <ul className="mt-6 space-y-4">

@@ -195,7 +195,7 @@ export default function AccederPage() {
         <p className="mt-6 text-center text-xs text-zinc-500">
           ¿Solo quieres comprar?{" "}
           <Link href="/checkout" className="text-neon-cyan hover:text-white">
-            Checkout como invitado
+            Comprar sin registrarme
           </Link>
         </p>
       </section>
