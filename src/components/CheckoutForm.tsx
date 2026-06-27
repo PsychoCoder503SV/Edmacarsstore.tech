@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckoutPaymentPanel } from "@/components/CheckoutPaymentPanel";
 import { PasswordResetFlow } from "@/components/PasswordResetFlow";
 import { useCart } from "@/components/CartProvider";
@@ -24,6 +24,7 @@ import {
   loadDeliveryLocationCache,
   saveDeliveryLocationCache,
 } from "@/lib/delivery-location-cache";
+import { saveProfileDeliveryLocation, syncBrowserCacheToProfile } from "@/lib/profile-delivery";
 import {
   hasFieldErrors,
   normalizeSvPhone,
@@ -71,6 +72,7 @@ export function CheckoutForm() {
   const [useNewAddress, setUseNewAddress] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState<string | null>(null);
+  const profileSyncRef = useRef(false);
 
   const isLoggedIn = !!user;
   const showCheckoutFlow = isLoggedIn || checkoutMode === "guest";
@@ -127,6 +129,26 @@ export function CheckoutForm() {
   }, [user, profile]);
 
   useEffect(() => {
+    if (!user?.id) {
+      profileSyncRef.current = false;
+      return;
+    }
+    if (profileSyncRef.current) return;
+    profileSyncRef.current = true;
+
+    const normalized = normalizeSvPhone(phone.trim());
+    void syncBrowserCacheToProfile(supabase, profile, {
+      address,
+      notes,
+      fullName: fullName.trim() || profile?.full_name || undefined,
+      phone: normalized ? `+503${normalized}` : profile?.phone ?? undefined,
+      preferredPayment,
+    }).then((synced) => {
+      if (synced) void refresh();
+    });
+  }, [user?.id, profile, supabase, refresh, address, notes, fullName, phone, preferredPayment]);
+
+  useEffect(() => {
     if (isLoggedIn || showSavedAddressCard) return;
     const timer = window.setTimeout(() => {
       saveDeliveryLocationCache({
@@ -140,6 +162,39 @@ export function CheckoutForm() {
     }, 500);
     return () => window.clearTimeout(timer);
   }, [lat, lng, address, notes, isLoggedIn, showSavedAddressCard]);
+
+  useEffect(() => {
+    if (!isLoggedIn || showSavedAddressCard || !address.trim() || isDefaultCoords(lat, lng)) return;
+
+    const timer = window.setTimeout(() => {
+      const normalized = normalizeSvPhone(phone.trim());
+      void saveProfileDeliveryLocation(supabase, {
+        address: address.trim(),
+        notes: notes.trim() || undefined,
+        lat,
+        lng,
+        fullName: fullName.trim(),
+        phone: normalized ? `+503${normalized}` : phone.trim() || undefined,
+        preferredPayment,
+      }).then((result) => {
+        if (result.ok) void refresh();
+      });
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    isLoggedIn,
+    showSavedAddressCard,
+    address,
+    notes,
+    lat,
+    lng,
+    fullName,
+    phone,
+    preferredPayment,
+    supabase,
+    refresh,
+  ]);
 
   const handleMapChange = useCallback((a: number, b: number) => {
     setLat(a);
