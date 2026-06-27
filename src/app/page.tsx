@@ -62,7 +62,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="todos-los-productos" className="border-t border-white/5 bg-surface/50 py-16 backdrop-blur-[2px]">
+      <section id="todos-los-productos" className="scroll-mt-20 border-t border-white/5 bg-surface/50 py-16 backdrop-blur-[2px]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between gap-4">
             <div>
@@ -86,7 +86,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="categorias" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <section id="categorias" className="scroll-mt-20 mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div>
           <h2 className="text-2xl font-semibold text-white">Categorías</h2>
           <p className="mt-1 text-sm text-zinc-500">Explora por tipo de producto</p>

@@ -4,15 +4,25 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { CartBadge } from "@/components/CartBadge";
 import { useAuth } from "@/lib/auth";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const navLinks = [
   { href: "/catalogo", label: "Catálogo" },
-  { href: "/#productos-por-categoria", label: "Categorías" },
+  { href: "/#categorias", label: "Categorías", hash: "categorias" },
   { href: "/catalogo?filter=ofertas", label: "Ofertas" },
 ];
 
 export function Header() {
   const { user } = useAuth();
+  const pathname = usePathname();
+
+  function scrollToHash(hash: string) {
+    const el = document.getElementById(hash);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.history.pushState(null, "", `#${hash}`);
+    }
+  }
 
   return (
     <header className="header-blur sticky top-0 z-50 border-b border-white/5 backdrop-blur-xl">
@@ -25,6 +35,14 @@ export function Header() {
               key={link.href}
               href={link.href}
               className="rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-white/5 hover:text-white"
+              onClick={
+                link.hash && pathname === "/"
+                  ? (e) => {
+                      e.preventDefault();
+                      scrollToHash(link.hash!);
+                    }
+                  : undefined
+              }
             >
               {link.label}
             </Link>
