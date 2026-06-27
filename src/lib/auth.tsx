@@ -66,11 +66,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase, loadProfile]);
 
   useEffect(() => {
-    refresh();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      refresh();
+    let active = true;
+
+    const runRefresh = async () => {
+      if (!active) return;
+      await refresh();
+    };
+
+    void runRefresh();
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      // Evita doble carga al abrir la app y refrescos de token que bloquean la UI
+      if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") return;
+      void runRefresh();
     });
-    return () => sub.subscription.unsubscribe();
+
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
   }, [supabase, refresh]);
 
   const signOut = useCallback(async () => {

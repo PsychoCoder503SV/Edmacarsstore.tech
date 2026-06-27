@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { createSupabaseClient } from "@/lib/supabase";
 import { PAYMENT_LABELS, type PaymentMethod } from "@/lib/checkout";
@@ -24,22 +24,29 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function MisPedidosPage() {
   const { user } = useAuth();
-  const supabase = createSupabaseClient();
+  const supabase = useMemo(() => createSupabaseClient(), []);
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const linkedRef = useRef(false);
 
   useEffect(() => {
     if (!user?.id) return;
     const userId = user.id;
+    let cancelled = false;
 
     async function load() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      if (accessToken) {
-        await fetch("/api/auth/link-my-orders", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }).catch(() => null);
+      setLoading(true);
+
+      if (!linkedRef.current) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        if (accessToken) {
+          await fetch("/api/auth/link-my-orders", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }).catch(() => null);
+        }
+        linkedRef.current = true;
       }
 
       const { data, error } = await supabase
@@ -47,6 +54,8 @@ export default function MisPedidosPage() {
         .select("id, created_at, status, total_amount, shipping_address, user_id")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
+
+      if (cancelled) return;
 
       if (error) {
         console.error("[pedidos] load failed", error);
@@ -58,7 +67,10 @@ export default function MisPedidosPage() {
     }
 
     load();
-  }, [supabase, user]);
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, user?.id]);
 
   function parseShipping(addr: string | null) {
     if (!addr) return { orderNumber: "—", payment: "" };
