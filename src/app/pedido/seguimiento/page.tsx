@@ -4,11 +4,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { PAYMENT_LABELS, type PaymentMethod } from "@/lib/checkout";
-import {
-  ORDER_STATUS_LABELS,
-  ORDER_STATUS_STEPS,
-  statusStepIndex,
-} from "@/lib/order-tracking";
+import { OrderStatusBar } from "@/components/OrderStatusBar";
+import { ORDER_STATUS_LABELS } from "@/lib/order-tracking";
 
 type TrackedItem = {
   name: string;
@@ -83,8 +80,7 @@ function SeguimientoContent() {
     await fetchTrack(orderNumber, email);
   }
 
-  const currentStep = order ? statusStepIndex(order.status) : 0;
-  const isCancelled = order?.status === "cancelled";
+
 
   return (
     <section className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
@@ -156,33 +152,7 @@ function SeguimientoContent() {
             </div>
           </div>
 
-          {!isCancelled ? (
-            <div className="grid grid-cols-4 gap-2">
-              {ORDER_STATUS_STEPS.map((step, i) => {
-                const active = i <= currentStep;
-                return (
-                  <div key={step} className="text-center">
-                    <div
-                      className={`mx-auto h-2 rounded-full ${
-                        active ? "bg-neon-cyan" : "bg-white/10"
-                      }`}
-                    />
-                    <p
-                      className={`mt-2 text-[10px] leading-tight ${
-                        active ? "text-neon-cyan" : "text-zinc-600"
-                      }`}
-                    >
-                      {ORDER_STATUS_LABELS[step]}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-              Este pedido fue cancelado.
-            </p>
-          )}
+          <OrderStatusBar status={order.status} />
 
           {order.paymentMethod && (
             <p className="text-sm text-zinc-400">
