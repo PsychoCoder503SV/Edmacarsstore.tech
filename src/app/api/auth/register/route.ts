@@ -1,10 +1,8 @@
 import { findUserByEmail } from "@/lib/auth-admin";
+import { linkOrdersToNewAccount } from "@/lib/order-linking";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { validateEmail, validateFullName, validatePassword } from "@/lib/validation";
 import { NextResponse } from "next/server";
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type RegisterBody = {
   email?: string;
@@ -20,11 +18,6 @@ type RegisterBody = {
   trackToken?: string;
 };
 
-type ShippingRecord = {
-  order_number?: string;
-  track_token?: string;
-};
-
 function buildProfilePayload(userId: string, body: RegisterBody) {
   return {
     id: userId,
@@ -37,32 +30,6 @@ function buildProfilePayload(userId: string, body: RegisterBody) {
     preferred_payment: body.preferredPayment?.trim() || null,
     role: "customer" as const,
   };
-}
-
-async function linkOrderToUser(
-  supabase: ReturnType<typeof createSupabaseAdmin>,
-  userId: string,
-  orderId: string,
-  trackToken: string
-) {
-  if (!UUID_RE.test(orderId)) return;
-
-  const { data: order } = await supabase
-    .from("orders")
-    .select("id, user_id, shipping_address")
-    .eq("id", orderId)
-    .maybeSingle();
-
-  if (!order || order.user_id) return;
-
-  try {
-    const shipping = JSON.parse(order.shipping_address ?? "{}") as ShippingRecord;
-    if (shipping.track_token !== trackToken) return;
-  } catch {
-    return;
-  }
-
-  await supabase.from("orders").update({ user_id: userId }).eq("id", orderId);
 }
 
 export async function POST(request: Request) {
@@ -120,19 +87,14 @@ export async function POST(request: Request) {
 
       await supabase.from("profiles").upsert(buildProfilePayload(userId, body));
 
-      if (body.orderId && body.trackToken) {
-        await linkOrderToUser(supabase, userId, body.orderId, body.trackToken);
-      }
+      await linkOrdersToNewAccount(supabase, userId, email, body.orderId, body.trackToken);
 
       return NextResponse.json({ ok: true, userId, created: false, recovered: true });
     }
 
     if (userId) {
       await supabase.from("profiles").upsert(buildProfilePayload(userId, body));
-
-      if (body.orderId && body.trackToken) {
-        await linkOrderToUser(supabase, userId, body.orderId, body.trackToken);
-      }
+      await linkOrdersToNewAccount(supabase, userId, email, body.orderId, body.trackToken);
     }
 
     return NextResponse.json({ ok: true, userId, created: !createErr });

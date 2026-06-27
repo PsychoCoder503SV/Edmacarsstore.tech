@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth";
 import { createSupabaseClient } from "@/lib/supabase";
 import { PAYMENT_LABELS, type PaymentMethod } from "@/lib/checkout";
 
@@ -10,6 +11,7 @@ type OrderRow = {
   status: string;
   total_amount: number;
   shipping_address: string | null;
+  user_id: string | null;
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -21,21 +23,42 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function MisPedidosPage() {
+  const { user } = useAuth();
   const supabase = createSupabaseClient();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user?.id) return;
+    const userId = user.id;
+
     async function load() {
-      const { data } = await supabase
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (accessToken) {
+        await fetch("/api/auth/link-my-orders", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }).catch(() => null);
+      }
+
+      const { data, error } = await supabase
         .from("orders")
-        .select("id, created_at, status, total_amount, shipping_address")
+        .select("id, created_at, status, total_amount, shipping_address, user_id")
+        .eq("user_id", userId)
         .order("created_at", { ascending: false });
-      setOrders((data as OrderRow[]) ?? []);
+
+      if (error) {
+        console.error("[pedidos] load failed", error);
+        setOrders([]);
+      } else {
+        setOrders((data as OrderRow[]) ?? []);
+      }
       setLoading(false);
     }
+
     load();
-  }, [supabase]);
+  }, [supabase, user]);
 
   function parseShipping(addr: string | null) {
     if (!addr) return { orderNumber: "—", payment: "" };
@@ -46,6 +69,7 @@ export default function MisPedidosPage() {
         orderNumber: j.order_number ?? "—",
         payment: payment && PAYMENT_LABELS[payment] ? PAYMENT_LABELS[payment] : "",
         address: j.address ?? "",
+        email: j.email ?? "",
       };
     } catch {
       return { orderNumber: "—", payment: "", address: "" };
@@ -55,10 +79,16 @@ export default function MisPedidosPage() {
   return (
     <div>
       <h2 className="text-lg font-semibold text-white">Historial de pedidos</h2>
+      <p className="mt-1 text-xs text-zinc-500">
+        Solo pedidos vinculados a <span className="text-zinc-300">{user?.email}</span>
+      </p>
       {loading ? (
         <p className="mt-6 text-sm text-zinc-500">Cargando…</p>
       ) : orders.length === 0 ? (
-        <p className="mt-6 text-sm text-zinc-500">Aún no tienes pedidos con esta cuenta.</p>
+        <p className="mt-6 text-sm text-zinc-500">
+          Aún no tienes pedidos con esta cuenta. Si compraste como invitado, créala desde la confirmación del
+          pedido con el mismo email.
+        </p>
       ) : (
         <ul className="mt-6 space-y-4">
           {orders.map((o) => {
