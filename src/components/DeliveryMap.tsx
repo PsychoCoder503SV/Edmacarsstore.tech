@@ -35,6 +35,8 @@ export default function DeliveryMap({ lat, lng, onChange, preferSavedLocation = 
   const onChangeRef = useRef(onChange);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const persistDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const internalUpdateRef = useRef(false);
+  const initCoordsRef = useRef({ lat, lng });
 
   const [permission, setPermission] = useState<PermissionState>("idle");
   const [showPermissionModal, setShowPermissionModal] = useState(() =>
@@ -45,16 +47,22 @@ export default function DeliveryMap({ lat, lng, onChange, preferSavedLocation = 
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   onChangeRef.current = onChange;
 
-  const persistLocation = useCallback((latitude: number, longitude: number, onboardingDone = true) => {
+  const emitChange = useCallback((latitude: number, longitude: number) => {
+    internalUpdateRef.current = true;
+    onChangeRef.current(latitude, longitude);
+  }, []);
+
+  const persistLocation = useCallback((latitude: number, longitude: number) => {
     if (persistDebounceRef.current) clearTimeout(persistDebounceRef.current);
     persistDebounceRef.current = setTimeout(() => {
       saveDeliveryLocationCache({
         lat: latitude,
         lng: longitude,
-        mapOnboardingDone: onboardingDone,
+        mapOnboardingDone: true,
       });
     }, 300);
   }, []);
@@ -80,11 +88,11 @@ export default function DeliveryMap({ lat, lng, onChange, preferSavedLocation = 
     markerRef.current.on("dragend", () => {
       const pos = markerRef.current?.getLngLat();
       if (pos) {
-        onChangeRef.current(pos.lat, pos.lng);
+        emitChange(pos.lat, pos.lng);
         persistLocation(pos.lat, pos.lng);
       }
     });
-  }, [persistLocation]);
+  }, [emitChange, persistLocation]);
 
   const applyPosition = useCallback(
     (latitude: number, longitude: number, fly = false) => {
@@ -95,11 +103,11 @@ export default function DeliveryMap({ lat, lng, onChange, preferSavedLocation = 
           map.flyTo({ center: [longitude, latitude], zoom: 17, essential: true });
         }
       }
-      onChangeRef.current(latitude, longitude);
+      emitChange(latitude, longitude);
       persistLocation(latitude, longitude);
       setPermission("idle");
     },
-    [placeMarker, persistLocation]
+    [placeMarker, emitChange, persistLocation]
   );
 
   const runSearch = useCallback(async (query: string) => {
@@ -192,12 +200,18 @@ export default function DeliveryMap({ lat, lng, onChange, preferSavedLocation = 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    const start = initCoordsRef.current;
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: MAP_STYLE,
-      center: [lng, lat],
-      zoom: preferSavedLocation || !shouldShowMapOnboarding(lat, lng, preferSavedLocation) ? 15 : 13,
+      center: [start.lng, start.lat],
+      zoom: preferSavedLocation ? 15 : 13,
       attributionControl: false,
+    });
+
+    map.on("error", (e) => {
+      console.error("[DeliveryMap] error", e);
+      setMapError("No se pudo cargar el mapa. Revisa tu conexión e intenta recargar.");
     });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
@@ -205,12 +219,15 @@ export default function DeliveryMap({ lat, lng, onChange, preferSavedLocation = 
     map.on("click", (e) => {
       const { lat: clickLat, lng: clickLng } = e.lngLat;
       placeMarker(map, clickLat, clickLng);
-      onChangeRef.current(clickLat, clickLng);
+      emitChange(clickLat, clickLng);
       markMapOnboardingDone();
       persistLocation(clickLat, clickLng);
     });
 
-    placeMarker(map, lat, lng);
+    map.once("load", () => {
+      placeMarker(map, start.lat, start.lng);
+    });
+
     mapRef.current = map;
 
     return () => {
@@ -221,17 +238,22 @@ export default function DeliveryMap({ lat, lng, onChange, preferSavedLocation = 
       map.remove();
       mapRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- init once; lat/lng synced below
-  }, [placeMarker, persistLocation, preferSavedLocation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- init once per mount
+  }, []);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+
     placeMarker(map, lat, lng);
-    if (!shouldShowMapOnboarding(lat, lng, preferSavedLocation)) {
-      map.flyTo({ center: [lng, lat], zoom: 15, essential: true, duration: 600 });
+
+    if (internalUpdateRef.current) {
+      internalUpdateRef.current = false;
+      return;
     }
-  }, [lat, lng, preferSavedLocation, placeMarker]);
+
+    map.flyTo({ center: [lng, lat], zoom: 15, essential: true, duration: 500 });
+  }, [lat, lng, placeMarker]);
 
   return (
     <div className="delivery-map-wrap overflow-hidden rounded-2xl border border-neon-cyan/20 bg-surface shadow-neon-cyan">
@@ -267,6 +289,7 @@ export default function DeliveryMap({ lat, lng, onChange, preferSavedLocation = 
         )}
 
         {searchError && <p className="delivery-map-search-error">{searchError}</p>}
+        {mapError && <p className="delivery-map-search-error">{mapError}</p>}
 
         <div ref={containerRef} className="delivery-map-canvas h-[22rem] w-full sm:h-[26rem]" />
 
