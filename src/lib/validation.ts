@@ -71,6 +71,15 @@ export function getPasswordRules(password: string): PasswordRules {
   };
 }
 
+export function validatePasswordConfirm(
+  password: string,
+  confirm: string
+): string | undefined {
+  if (!confirm.trim()) return "Confirma tu contraseña";
+  if (password !== confirm) return "Las contraseñas no coinciden";
+  return undefined;
+}
+
 export function validatePassword(password: string, required: boolean): string | undefined {
   if (!required) return undefined;
   const rules = getPasswordRules(password);

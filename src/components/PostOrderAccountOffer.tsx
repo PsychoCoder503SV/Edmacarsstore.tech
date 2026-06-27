@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { PasswordField } from "@/components/PasswordField";
 import { useAuth } from "@/lib/auth";
 import { registerAndSignIn } from "@/lib/auth-client";
 import type { OrderConfirmationData } from "@/lib/checkout";
@@ -110,17 +111,15 @@ export function PostOrderAccountOffer({ data, onAccountCreated }: Props) {
           </div>
 
           <div>
-            <input
-              className={`checkout-input${passwordError ? " checkout-input-error" : ""}`}
-              type="password"
+            <PasswordField
               placeholder="Elige una contraseña *"
               value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
+              onChange={(value) => {
+                setPassword(value);
                 setPasswordError(null);
               }}
+              hasError={!!passwordError}
               autoComplete="new-password"
-              aria-invalid={!!passwordError}
             />
             {passwordError && <p className="mt-1 text-xs text-red-400">{passwordError}</p>}
           </div>

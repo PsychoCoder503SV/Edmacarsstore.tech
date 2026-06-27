@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckoutPaymentPanel } from "@/components/CheckoutPaymentPanel";
+import { PasswordField } from "@/components/PasswordField";
 import { PasswordResetFlow } from "@/components/PasswordResetFlow";
 import { useCart } from "@/components/CartProvider";
 import { useAuth } from "@/lib/auth";
@@ -394,12 +395,11 @@ export function CheckoutForm() {
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                 />
-                <input
-                  className="checkout-input"
-                  type="password"
+                <PasswordField
                   placeholder="Contraseña"
                   value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
+                  onChange={setLoginPassword}
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"

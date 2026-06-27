@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { PasswordField } from "@/components/PasswordField";
 import { PasswordResetFlow } from "@/components/PasswordResetFlow";
 import { registerAndSignIn, signInCustomer } from "@/lib/auth-client";
 import { createSupabaseClient } from "@/lib/supabase";
@@ -143,13 +144,11 @@ export default function AccederPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-              <input
-                className="checkout-input"
-                type="password"
+              <PasswordField
                 placeholder="Contraseña"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                onChange={setPassword}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
               />
               {mode === "register" && (
                 <ul className="grid gap-1 text-xs sm:grid-cols-2">
