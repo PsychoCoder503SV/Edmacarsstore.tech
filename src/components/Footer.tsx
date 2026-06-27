@@ -57,8 +57,16 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-white/5 pt-8 text-center text-xs text-zinc-600 sm:text-left">
-          <p>© {new Date().getFullYear()} Edmacars Import and Sales, S.A. de C.V.</p>
+        <div className="mt-10 border-t border-white/10 pt-8 text-center text-sm leading-relaxed text-white/40">
+          <p>
+            © {new Date().getFullYear()}{" "}
+            <span className="font-medium tracking-[0.08em] text-red-500">
+              EDMACAR&apos;S IMPORT &amp; SALES S.A. DE C.V.
+            </span>{" "}
+            Todos los derechos reservados.
+            <br />
+            Calidad y servicio personalizado en cada entrega.
+          </p>
         </div>
       </div>
     </footer>
