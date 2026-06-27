@@ -3,10 +3,10 @@
  * Usa el puente propio (whatsapp-bridge) con tu sesión de WhatsApp, sin API de Meta.
  */
 
+import { resolveWhatsAppDigits } from "@/lib/whatsapp-config";
+
 function notifyNumber(): string | null {
-  const raw = process.env.WHATSAPP_NOTIFY_NUMBER ?? "";
-  const digits = raw.replace(/\D/g, "");
-  return digits.length >= 8 ? digits : null;
+  return resolveWhatsAppDigits();
 }
 
 async function sendViaInternalBridge(message: string): Promise<boolean> {

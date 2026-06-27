@@ -1,6 +1,8 @@
 import type { CheckoutCustomer, PaymentMethod } from "@/lib/checkout";
 import { BANK_DETAILS, PAYMENT_LABELS, buildMapUrl, hasDeliveryCoordinates } from "@/lib/checkout";
+import { buildWhatsAppMeUrl } from "@/lib/whatsapp-config";
 
+/** Solo NEXT_PUBLIC_* en el bundle del cliente — preferir digits desde el servidor. */
 export function whatsAppNumber(): string | null {
   const raw = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "";
   const digits = raw.replace(/\D/g, "");
@@ -64,8 +66,11 @@ export function formatWhatsAppProofMessage(
     .join("\n");
 }
 
-export function buildWhatsAppProofUrl(message: string): string | null {
-  const number = whatsAppNumber();
+export function buildWhatsAppProofUrl(
+  message: string,
+  digitsOverride?: string | null
+): string | null {
+  const number = digitsOverride ?? whatsAppNumber();
   if (!number) return null;
-  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+  return buildWhatsAppMeUrl(number, message);
 }
